@@ -1,329 +1,205 @@
 package com.clinicapp.service;
 
 import com.clinicapp.model.Doctor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
- * DoctorManager handles all CRUD operations for doctors and manages their availability schedules.
- * 
- * Data Structure: ArrayList<Doctor>
- * - ArrayList provides O(1) access by index for fast retrieval
- * - Dynamic resizing allows for flexible doctor list management
- * - Each Doctor object maintains its own List<String> for available time slots
- * 
- * Requirements covered: 6-10 (Doctor management), 15 (Schedule lookup)
+ * DoctorManager handles all doctor-related operations including
+ * adding, updating, deleting, and searching for doctors.
+ * Uses a HashMap for efficient doctor lookup by ID.
  */
 public class DoctorManager {
+    // HashMap for O(1) lookup by doctor ID
+    private final Map<Integer, Doctor> doctors;
     
     /**
-     * Main storage for all registered doctors.
-     * ArrayList is chosen for its dynamic sizing and fast index-based access.
+     * Constructor initializes the doctor storage.
      */
-    private ArrayList<Doctor> doctors;
-    
     public DoctorManager() {
-        this.doctors = new ArrayList<>();
+        this.doctors = new HashMap<>();
     }
     
     /**
-     * Adds a new doctor to the system.
+     * Add a new doctor to the system.
      * 
-     * @param doctor The doctor to add
-     * @return true if doctor was added successfully, false if doctor with same ID already exists
+     * @param name Doctor's full name
+     * @param specialization Doctor's medical specialization
+     * @param phoneNumber Doctor's contact number
+     * @param email Doctor's email address
+     * @param availableDays List of days doctor is available
+     * @param startTime Doctor's starting work time
+     * @param endTime Doctor's ending work time
+     * @return The newly created Doctor object
      */
-    public boolean addDoctor(Doctor doctor) {
-        if (doctor == null) {
-            System.out.println("Error: Cannot add null doctor");
-            return false;
-        }
-        
-        if (findDoctorById(doctor.getDoctorId()) != null) {
-            System.out.println("Error: Doctor with ID " + doctor.getDoctorId() + " already exists");
-            return false;
-        }
-        
-        doctors.add(doctor);
-        System.out.println("Success: Doctor " + doctor.getName() + " added successfully");
-        return true;
+    public Doctor addDoctor(String name, String specialization, String phoneNumber,
+                           String email, List<String> availableDays, String startTime,
+                           String endTime) {
+        Doctor doctor = new Doctor(name, specialization, phoneNumber, email,
+                                  availableDays, startTime, endTime);
+        doctors.put(doctor.getId(), doctor);
+        return doctor;
     }
     
     /**
-     * Retrieves a doctor by their unique ID.
+     * Get a doctor by their ID.
      * 
-     * @param doctorId The ID of the doctor to find
-     * @return The doctor if found, null otherwise
+     * @param id Doctor ID to look up
+     * @return Doctor object if found, null otherwise
      */
-    public Doctor findDoctorById(String doctorId) {
-        if (doctorId == null || doctorId.trim().isEmpty()) {
-            return null;
-        }
-        
-        for (Doctor doctor : doctors) {
-            if (doctor.getDoctorId().equals(doctorId)) {
-                return doctor;
-            }
-        }
-        return null;
+    public Doctor getDoctorById(int id) {
+        return doctors.get(id);
     }
     
     /**
-     * Searches for doctors by name (partial match, case-insensitive).
-     * 
-     * @param name The name or partial name to search for
-     * @return List of doctors matching the search criteria
-     */
-    public List<Doctor> searchDoctorsByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        String searchTerm = name.toLowerCase();
-        return doctors.stream()
-                .filter(doctor -> doctor.getName().toLowerCase().contains(searchTerm))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Searches for doctors by specialization (partial match, case-insensitive).
-     * 
-     * @param specialization The specialization to search for
-     * @return List of doctors matching the specialization
-     */
-    public List<Doctor> searchDoctorsBySpecialization(String specialization) {
-        if (specialization == null || specialization.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        String searchTerm = specialization.toLowerCase();
-        return doctors.stream()
-                .filter(doctor -> doctor.getSpecialization().toLowerCase().contains(searchTerm))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Updates an existing doctor's information.
-     * 
-     * @param doctorId The ID of the doctor to update
-     * @param updatedDoctor The doctor object with updated information
-     * @return true if update was successful, false if doctor not found
-     */
-    public boolean updateDoctor(String doctorId, Doctor updatedDoctor) {
-        if (doctorId == null || updatedDoctor == null) {
-            System.out.println("Error: Invalid parameters for update");
-            return false;
-        }
-        
-        Doctor existingDoctor = findDoctorById(doctorId);
-        if (existingDoctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return false;
-        }
-        
-        existingDoctor.setName(updatedDoctor.getName());
-        existingDoctor.setSpecialization(updatedDoctor.getSpecialization());
-        existingDoctor.setPhoneNumber(updatedDoctor.getPhoneNumber());
-        
-        System.out.println("Success: Doctor " + doctorId + " updated successfully");
-        return true;
-    }
-    
-    /**
-     * Deletes a doctor from the system.
-     * 
-     * @param doctorId The ID of the doctor to delete
-     * @return true if deletion was successful, false if doctor not found
-     */
-    public boolean deleteDoctor(String doctorId) {
-        if (doctorId == null) {
-            System.out.println("Error: Doctor ID cannot be null");
-            return false;
-        }
-        
-        Doctor doctor = findDoctorById(doctorId);
-        if (doctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return false;
-        }
-        
-        doctors.remove(doctor);
-        System.out.println("Success: Doctor " + doctorId + " deleted successfully");
-        return true;
-    }
-    
-    /**
-     * Retrieves all doctors in the system.
+     * Get all doctors in the system.
      * 
      * @return List of all doctors
      */
     public List<Doctor> getAllDoctors() {
-        return new ArrayList<>(doctors);
+        return new ArrayList<>(doctors.values());
     }
     
     /**
-     * Adds an available time slot to a doctor's schedule.
+     * Get only available doctors.
      * 
-     * @param doctorId The ID of the doctor
-     * @param timeSlot The time slot to add (e.g., "2024-01-15 09:00")
-     * @return true if time slot was added successfully, false otherwise
+     * @return List of available doctors
      */
-    public boolean addAvailableTimeSlot(String doctorId, String timeSlot) {
-        Doctor doctor = findDoctorById(doctorId);
-        if (doctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return false;
-        }
-        
-        if (timeSlot == null || timeSlot.trim().isEmpty()) {
-            System.out.println("Error: Time slot cannot be empty");
-            return false;
-        }
-        
-        if (doctor.getAvailableTimeSlots().contains(timeSlot)) {
-            System.out.println("Warning: Time slot " + timeSlot + " already exists for doctor " + doctor.getName());
-            return false;
-        }
-        
-        doctor.addAvailableTimeSlot(timeSlot);
-        System.out.println("Success: Time slot " + timeSlot + " added for doctor " + doctor.getName());
-        return true;
-    }
-    
-    /**
-     * Removes an available time slot from a doctor's schedule.
-     * 
-     * @param doctorId The ID of the doctor
-     * @param timeSlot The time slot to remove
-     * @return true if time slot was removed successfully, false otherwise
-     */
-    public boolean removeAvailableTimeSlot(String doctorId, String timeSlot) {
-        Doctor doctor = findDoctorById(doctorId);
-        if (doctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return false;
-        }
-        
-        if (!doctor.getAvailableTimeSlots().contains(timeSlot)) {
-            System.out.println("Warning: Time slot " + timeSlot + " does not exist for doctor " + doctor.getName());
-            return false;
-        }
-        
-        doctor.removeAvailableTimeSlot(timeSlot);
-        System.out.println("Success: Time slot " + timeSlot + " removed for doctor " + doctor.getName());
-        return true;
-    }
-    
-    /**
-     * Retrieves all available time slots for a specific doctor.
-     * 
-     * @param doctorId The ID of the doctor
-     * @return List of available time slots, or empty list if doctor not found
-     */
-    public List<String> getDoctorAvailableSlots(String doctorId) {
-        Doctor doctor = findDoctorById(doctorId);
-        if (doctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return new ArrayList<>();
-        }
-        
-        return new ArrayList<>(doctor.getAvailableTimeSlots());
-    }
-    
-    /**
-     * Checks if a doctor is available at a specific time slot.
-     * 
-     * @param doctorId The ID of the doctor
-     * @param timeSlot The time slot to check
-     * @return true if doctor is available, false otherwise
-     */
-    public boolean isDoctorAvailable(String doctorId, String timeSlot) {
-        Doctor doctor = findDoctorById(doctorId);
-        if (doctor == null) {
-            return false;
-        }
-        
-        return doctor.getAvailableTimeSlots().contains(timeSlot);
-    }
-    
-    /**
-     * Finds all doctors available at a specific time slot.
-     * 
-     * @param timeSlot The time slot to check
-     * @return List of doctors available at that time
-     */
-    public List<Doctor> findDoctorsAvailableAt(String timeSlot) {
-        if (timeSlot == null || timeSlot.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        return doctors.stream()
-                .filter(doctor -> doctor.getAvailableTimeSlots().contains(timeSlot))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Displays all doctors with their information and available time slots.
-     */
-    public void displayAllDoctors() {
-        if (doctors.isEmpty()) {
-            System.out.println("No doctors registered in the system.");
-            return;
-        }
-        
-        System.out.println("\n===== Doctor List =====");
-        for (Doctor doctor : doctors) {
-            System.out.println("Doctor ID: " + doctor.getDoctorId());
-            System.out.println("Name: " + doctor.getName());
-            System.out.println("Specialization: " + doctor.getSpecialization());
-            System.out.println("Phone: " + doctor.getPhoneNumber());
-            System.out.println("Available Time Slots: " + 
-                    (doctor.getAvailableTimeSlots().isEmpty() ? "None" : 
-                     String.join(", ", doctor.getAvailableTimeSlots())));
-            System.out.println("------------------------");
-        }
-        System.out.println("Total doctors: " + doctors.size());
-    }
-    
-    /**
-     * Displays available time slots for a specific doctor.
-     * 
-     * @param doctorId The ID of the doctor
-     */
-    public void displayDoctorSchedule(String doctorId) {
-        Doctor doctor = findDoctorById(doctorId);
-        if (doctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return;
-        }
-        
-        System.out.println("\n===== Schedule for Dr. " + doctor.getName() + " =====");
-        System.out.println("Specialization: " + doctor.getSpecialization());
-        System.out.println("Available Time Slots:");
-        
-        if (doctor.getAvailableTimeSlots().isEmpty()) {
-            System.out.println("  No available time slots");
-        } else {
-            for (int i = 0; i < doctor.getAvailableTimeSlots().size(); i++) {
-                System.out.println("  " + (i + 1) + ". " + doctor.getAvailableTimeSlots().get(i));
+    public List<Doctor> getAvailableDoctors() {
+        List<Doctor> available = new ArrayList<>();
+        for (Doctor doctor : doctors.values()) {
+            if (doctor.isAvailable()) {
+                available.add(doctor);
             }
         }
+        return available;
     }
     
     /**
-     * Gets the total count of registered doctors.
+     * Search for doctors by name (case-insensitive partial match).
      * 
-     * @return The number of doctors in the system
+     * @param name Name or partial name to search for
+     * @return List of matching doctors
+     */
+    public List<Doctor> searchDoctorsByName(String name) {
+        List<Doctor> results = new ArrayList<>();
+        String searchTerm = name.toLowerCase();
+        
+        for (Doctor doctor : doctors.values()) {
+            if (doctor.getName().toLowerCase().contains(searchTerm)) {
+                results.add(doctor);
+            }
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Search for doctors by specialization (case-insensitive partial match).
+     * 
+     * @param specialization Specialization to search for
+     * @return List of matching doctors
+     */
+    public List<Doctor> searchDoctorsBySpecialization(String specialization) {
+        List<Doctor> results = new ArrayList<>();
+        String searchTerm = specialization.toLowerCase();
+        
+        for (Doctor doctor : doctors.values()) {
+            if (doctor.getSpecialization().toLowerCase().contains(searchTerm)) {
+                results.add(doctor);
+            }
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Update doctor information.
+     * 
+     * @param id Doctor ID to update
+     * @param name New name (null to keep existing)
+     * @param specialization New specialization (null to keep existing)
+     * @param phoneNumber New phone number (null to keep existing)
+     * @param email New email (null to keep existing)
+     * @param availableDays New available days (null to keep existing)
+     * @param startTime New start time (null to keep existing)
+     * @param endTime New end time (null to keep existing)
+     * @return true if doctor was found and updated, false otherwise
+     */
+    public boolean updateDoctor(int id, String name, String specialization,
+                               String phoneNumber, String email, List<String> availableDays,
+                               String startTime, String endTime) {
+        Doctor doctor = doctors.get(id);
+        if (doctor == null) {
+            return false;
+        }
+        
+        // Update only non-null fields
+        if (name != null) doctor.setName(name);
+        if (specialization != null) doctor.setSpecialization(specialization);
+        if (phoneNumber != null) doctor.setPhoneNumber(phoneNumber);
+        if (email != null) doctor.setEmail(email);
+        if (availableDays != null) doctor.setAvailableDays(availableDays);
+        if (startTime != null) doctor.setStartTime(startTime);
+        if (endTime != null) doctor.setEndTime(endTime);
+        
+        return true;
+    }
+    
+    /**
+     * Set doctor availability status.
+     * 
+     * @param id Doctor ID
+     * @param available Availability status to set
+     * @return true if doctor was found and updated, false otherwise
+     */
+    public boolean setDoctorAvailability(int id, boolean available) {
+        Doctor doctor = doctors.get(id);
+        if (doctor == null) {
+            return false;
+        }
+        doctor.setAvailable(available);
+        return true;
+    }
+    
+    /**
+     * Delete a doctor from the system.
+     * 
+     * @param id Doctor ID to delete
+     * @return true if doctor was found and deleted, false otherwise
+     */
+    public boolean deleteDoctor(int id) {
+        return doctors.remove(id) != null;
+    }
+    
+    /**
+     * Get the total number of doctors in the system.
+     * 
+     * @return Count of doctors
      */
     public int getDoctorCount() {
         return doctors.size();
     }
     
     /**
-     * Clears all doctors from the system (useful for testing).
+     * Check if a doctor exists by ID.
+     * 
+     * @param id Doctor ID to check
+     * @return true if doctor exists, false otherwise
      */
-    public void clearAllDoctors() {
-        doctors.clear();
-        System.out.println("All doctors cleared from the system");
+    public boolean doctorExists(int id) {
+        return doctors.containsKey(id);
+    }
+    
+    /**
+     * Get unique list of all specializations in the system.
+     * 
+     * @return Set of specializations
+     */
+    public Set<String> getAllSpecializations() {
+        Set<String> specializations = new HashSet<>();
+        for (Doctor doctor : doctors.values()) {
+            specializations.add(doctor.getSpecialization());
+        }
+        return specializations;
     }
 }

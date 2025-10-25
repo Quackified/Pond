@@ -1,206 +1,185 @@
 package com.clinicapp.service;
 
 import com.clinicapp.model.Patient;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.util.*;
 
 /**
- * PatientManager handles all CRUD operations for patients.
- * 
- * Data Structure: ArrayList<Patient>
- * - ArrayList provides O(1) access by index for fast retrieval
- * - Dynamic resizing allows for flexible patient list management
- * - Sequential access is efficient for displaying all patients
- * 
- * Requirements covered: 1-5 (CRUD and search operations for patients)
+ * PatientManager handles all patient-related operations including
+ * adding, updating, deleting, and searching for patients.
+ * Uses a HashMap for efficient patient lookup by ID.
  */
 public class PatientManager {
+    // HashMap for O(1) lookup by patient ID
+    private final Map<Integer, Patient> patients;
     
     /**
-     * Main storage for all registered patients.
-     * ArrayList is chosen for its dynamic sizing and fast index-based access.
+     * Constructor initializes the patient storage.
      */
-    private ArrayList<Patient> patients;
-    
     public PatientManager() {
-        this.patients = new ArrayList<>();
+        this.patients = new HashMap<>();
     }
     
     /**
-     * Adds a new patient to the system.
+     * Add a new patient to the system.
      * 
-     * @param patient The patient to add
-     * @return true if patient was added successfully, false if patient with same ID already exists
+     * @param name Patient's full name
+     * @param dateOfBirth Patient's date of birth
+     * @param gender Patient's gender
+     * @param phoneNumber Patient's contact number
+     * @param email Patient's email address
+     * @param address Patient's residential address
+     * @param bloodType Patient's blood type
+     * @param allergies Patient's known allergies
+     * @return The newly created Patient object
      */
-    public boolean addPatient(Patient patient) {
-        if (patient == null) {
-            System.out.println("Error: Cannot add null patient");
-            return false;
-        }
-        
-        if (findPatientById(patient.getPatientId()) != null) {
-            System.out.println("Error: Patient with ID " + patient.getPatientId() + " already exists");
-            return false;
-        }
-        
-        patients.add(patient);
-        System.out.println("Success: Patient " + patient.getName() + " added successfully");
-        return true;
+    public Patient addPatient(String name, LocalDate dateOfBirth, String gender,
+                             String phoneNumber, String email, String address,
+                             String bloodType, String allergies) {
+        Patient patient = new Patient(name, dateOfBirth, gender, phoneNumber, 
+                                     email, address, bloodType, allergies);
+        patients.put(patient.getId(), patient);
+        return patient;
     }
     
     /**
-     * Retrieves a patient by their unique ID.
+     * Get a patient by their ID.
      * 
-     * @param patientId The ID of the patient to find
-     * @return The patient if found, null otherwise
+     * @param id Patient ID to look up
+     * @return Patient object if found, null otherwise
      */
-    public Patient findPatientById(String patientId) {
-        if (patientId == null || patientId.trim().isEmpty()) {
-            return null;
-        }
-        
-        for (Patient patient : patients) {
-            if (patient.getPatientId().equals(patientId)) {
-                return patient;
-            }
-        }
-        return null;
+    public Patient getPatientById(int id) {
+        return patients.get(id);
     }
     
     /**
-     * Searches for patients by name (partial match, case-insensitive).
-     * 
-     * @param name The name or partial name to search for
-     * @return List of patients matching the search criteria
-     */
-    public List<Patient> searchPatientsByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        String searchTerm = name.toLowerCase();
-        return patients.stream()
-                .filter(patient -> patient.getName().toLowerCase().contains(searchTerm))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Searches for patients by phone number (partial match).
-     * 
-     * @param phoneNumber The phone number or partial phone number to search for
-     * @return List of patients matching the search criteria
-     */
-    public List<Patient> searchPatientsByPhone(String phoneNumber) {
-        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        return patients.stream()
-                .filter(patient -> patient.getPhoneNumber().contains(phoneNumber))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Updates an existing patient's information.
-     * 
-     * @param patientId The ID of the patient to update
-     * @param updatedPatient The patient object with updated information
-     * @return true if update was successful, false if patient not found
-     */
-    public boolean updatePatient(String patientId, Patient updatedPatient) {
-        if (patientId == null || updatedPatient == null) {
-            System.out.println("Error: Invalid parameters for update");
-            return false;
-        }
-        
-        Patient existingPatient = findPatientById(patientId);
-        if (existingPatient == null) {
-            System.out.println("Error: Patient with ID " + patientId + " not found");
-            return false;
-        }
-        
-        existingPatient.setName(updatedPatient.getName());
-        existingPatient.setPhoneNumber(updatedPatient.getPhoneNumber());
-        existingPatient.setEmail(updatedPatient.getEmail());
-        existingPatient.setAddress(updatedPatient.getAddress());
-        existingPatient.setAge(updatedPatient.getAge());
-        
-        System.out.println("Success: Patient " + patientId + " updated successfully");
-        return true;
-    }
-    
-    /**
-     * Deletes a patient from the system.
-     * 
-     * @param patientId The ID of the patient to delete
-     * @return true if deletion was successful, false if patient not found
-     */
-    public boolean deletePatient(String patientId) {
-        if (patientId == null) {
-            System.out.println("Error: Patient ID cannot be null");
-            return false;
-        }
-        
-        Patient patient = findPatientById(patientId);
-        if (patient == null) {
-            System.out.println("Error: Patient with ID " + patientId + " not found");
-            return false;
-        }
-        
-        patients.remove(patient);
-        System.out.println("Success: Patient " + patientId + " deleted successfully");
-        return true;
-    }
-    
-    /**
-     * Retrieves all patients in the system.
+     * Get all patients in the system.
      * 
      * @return List of all patients
      */
     public List<Patient> getAllPatients() {
-        return new ArrayList<>(patients);
+        return new ArrayList<>(patients.values());
     }
     
     /**
-     * Displays all patients in a formatted manner.
-     */
-    public void displayAllPatients() {
-        if (patients.isEmpty()) {
-            System.out.println("No patients registered in the system.");
-            return;
-        }
-        
-        System.out.println("\n===== Patient List =====");
-        System.out.println(String.format("%-10s %-20s %-15s %-25s %-5s", 
-                "ID", "Name", "Phone", "Email", "Age"));
-        System.out.println("------------------------------------------------------------------------------");
-        
-        for (Patient patient : patients) {
-            System.out.println(String.format("%-10s %-20s %-15s %-25s %-5d", 
-                    patient.getPatientId(),
-                    patient.getName(),
-                    patient.getPhoneNumber(),
-                    patient.getEmail(),
-                    patient.getAge()));
-        }
-        System.out.println("Total patients: " + patients.size());
-    }
-    
-    /**
-     * Gets the total count of registered patients.
+     * Search for patients by name (case-insensitive partial match).
      * 
-     * @return The number of patients in the system
+     * @param name Name or partial name to search for
+     * @return List of matching patients
+     */
+    public List<Patient> searchPatientsByName(String name) {
+        List<Patient> results = new ArrayList<>();
+        String searchTerm = name.toLowerCase();
+        
+        for (Patient patient : patients.values()) {
+            if (patient.getName().toLowerCase().contains(searchTerm)) {
+                results.add(patient);
+            }
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Update patient information.
+     * 
+     * @param id Patient ID to update
+     * @param name New name (null to keep existing)
+     * @param dateOfBirth New date of birth (null to keep existing)
+     * @param gender New gender (null to keep existing)
+     * @param phoneNumber New phone number (null to keep existing)
+     * @param email New email (null to keep existing)
+     * @param address New address (null to keep existing)
+     * @param bloodType New blood type (null to keep existing)
+     * @param allergies New allergies (null to keep existing)
+     * @return true if patient was found and updated, false otherwise
+     */
+    public boolean updatePatient(int id, String name, LocalDate dateOfBirth, 
+                                String gender, String phoneNumber, String email,
+                                String address, String bloodType, String allergies) {
+        Patient patient = patients.get(id);
+        if (patient == null) {
+            return false;
+        }
+        
+        // Update only non-null fields
+        if (name != null) patient.setName(name);
+        if (dateOfBirth != null) patient.setDateOfBirth(dateOfBirth);
+        if (gender != null) patient.setGender(gender);
+        if (phoneNumber != null) patient.setPhoneNumber(phoneNumber);
+        if (email != null) patient.setEmail(email);
+        if (address != null) patient.setAddress(address);
+        if (bloodType != null) patient.setBloodType(bloodType);
+        if (allergies != null) patient.setAllergies(allergies);
+        
+        return true;
+    }
+    
+    /**
+     * Delete a patient from the system.
+     * 
+     * @param id Patient ID to delete
+     * @return true if patient was found and deleted, false otherwise
+     */
+    public boolean deletePatient(int id) {
+        return patients.remove(id) != null;
+    }
+    
+    /**
+     * Get the total number of patients in the system.
+     * 
+     * @return Count of patients
      */
     public int getPatientCount() {
         return patients.size();
     }
     
     /**
-     * Clears all patients from the system (useful for testing).
+     * Check if a patient exists by ID.
+     * 
+     * @param id Patient ID to check
+     * @return true if patient exists, false otherwise
      */
-    public void clearAllPatients() {
-        patients.clear();
-        System.out.println("All patients cleared from the system");
+    public boolean patientExists(int id) {
+        return patients.containsKey(id);
+    }
+    
+    /**
+     * Get patients by gender.
+     * 
+     * @param gender Gender to filter by
+     * @return List of patients with matching gender
+     */
+    public List<Patient> getPatientsByGender(String gender) {
+        List<Patient> results = new ArrayList<>();
+        String searchGender = gender.toLowerCase();
+        
+        for (Patient patient : patients.values()) {
+            if (patient.getGender().toLowerCase().equals(searchGender)) {
+                results.add(patient);
+            }
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Get patients within a specific age range.
+     * 
+     * @param minAge Minimum age (inclusive)
+     * @param maxAge Maximum age (inclusive)
+     * @return List of patients within age range
+     */
+    public List<Patient> getPatientsByAgeRange(int minAge, int maxAge) {
+        List<Patient> results = new ArrayList<>();
+        
+        for (Patient patient : patients.values()) {
+            int age = patient.getAge();
+            if (age >= minAge && age <= maxAge) {
+                results.add(patient);
+            }
+        }
+        
+        return results;
     }
 }

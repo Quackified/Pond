@@ -222,13 +222,13 @@ project/
 ├── PROJECT_SUMMARY.md (this file)
 ├── compile.sh (build script)
 ├── run.sh (execution script)
-└── src/main/java/clinic/
+└── src/main/java/com/clinicapp/
     ├── ClinicAppointmentSystem.java (main)
     ├── model/ (3 classes)
     │   ├── Patient.java
     │   ├── Doctor.java
     │   └── Appointment.java
-    ├── manager/ (3 classes)
+    ├── service/ (3 classes)
     │   ├── PatientManager.java
     │   ├── DoctorManager.java
     │   └── AppointmentManager.java

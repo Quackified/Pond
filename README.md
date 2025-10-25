@@ -61,12 +61,12 @@ A comprehensive console-based Java application for managing clinic operations in
 
 ### Package Structure
 ```
-clinic/
+com/clinicapp/
 ├── model/              # Data models
 │   ├── Patient.java
 │   ├── Doctor.java
 │   └── Appointment.java
-├── manager/            # Business logic
+├── service/            # Business logic
 │   ├── PatientManager.java
 │   ├── DoctorManager.java
 │   └── AppointmentManager.java
@@ -107,21 +107,21 @@ clinic/
 cd /path/to/project
 
 # Compile all Java files
-javac -d bin src/main/java/clinic/*.java src/main/java/clinic/**/*.java
+javac -d bin src/main/java/com/clinicapp/*.java src/main/java/com/clinicapp/**/*.java
 
 # Alternative: Compile with explicit classpath
-javac -d bin src/main/java/clinic/model/*.java \
-              src/main/java/clinic/manager/*.java \
-              src/main/java/clinic/util/*.java \
-              src/main/java/clinic/ui/*.java \
-              src/main/java/clinic/*.java
+javac -d bin src/main/java/com/clinicapp/model/*.java \
+              src/main/java/com/clinicapp/service/*.java \
+              src/main/java/com/clinicapp/util/*.java \
+              src/main/java/com/clinicapp/ui/*.java \
+              src/main/java/com/clinicapp/*.java
 ```
 
 ### Running the Application
 
 ```bash
 # Run the main class
-java -cp bin clinic.ClinicAppointmentSystem
+java -cp bin com.clinicapp.ClinicAppointmentSystem
 ```
 
 ### Quick Start

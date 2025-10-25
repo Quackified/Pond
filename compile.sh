@@ -12,11 +12,11 @@ mkdir -p bin
 
 # Compile all Java files
 javac -d bin \
-    src/main/java/clinic/model/*.java \
-    src/main/java/clinic/manager/*.java \
-    src/main/java/clinic/util/*.java \
-    src/main/java/clinic/ui/*.java \
-    src/main/java/clinic/*.java
+    src/main/java/com/clinicapp/model/*.java \
+    src/main/java/com/clinicapp/service/*.java \
+    src/main/java/com/clinicapp/util/*.java \
+    src/main/java/com/clinicapp/ui/*.java \
+    src/main/java/com/clinicapp/*.java
 
 # Check compilation result
 if [ $? -eq 0 ]; then
@@ -27,7 +27,7 @@ if [ $? -eq 0 ]; then
     find bin -name "*.class" | wc -l
     echo ""
     echo "To run the application, use:"
-    echo "  java -cp bin clinic.ClinicAppointmentSystem"
+    echo "  java -cp bin com.clinicapp.ClinicAppointmentSystem"
     echo "or:"
     echo "  ./run.sh"
 else
