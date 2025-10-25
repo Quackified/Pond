@@ -1,14 +1,14 @@
-package clinic.ui;
+package com.clinicapp.ui;
 
-import clinic.manager.AppointmentManager;
-import clinic.manager.DoctorManager;
-import clinic.manager.PatientManager;
-import clinic.model.Appointment;
-import clinic.model.Appointment.AppointmentStatus;
-import clinic.model.Doctor;
-import clinic.model.Patient;
-import clinic.util.DisplayHelper;
-import clinic.util.InputValidator;
+import com.clinicapp.service.AppointmentManager;
+import com.clinicapp.service.DoctorManager;
+import com.clinicapp.service.PatientManager;
+import com.clinicapp.model.Appointment;
+import com.clinicapp.model.Appointment.AppointmentStatus;
+import com.clinicapp.model.Doctor;
+import com.clinicapp.model.Patient;
+import com.clinicapp.util.DisplayHelper;
+import com.clinicapp.util.InputValidator;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

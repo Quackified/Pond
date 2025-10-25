@@ -1,573 +1,449 @@
 package com.clinicapp.service;
 
 import com.clinicapp.model.Appointment;
+import com.clinicapp.model.Appointment.AppointmentStatus;
 import com.clinicapp.model.Doctor;
 import com.clinicapp.model.Patient;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * AppointmentManager coordinates all appointment-related operations, integrating patients and doctors.
- * 
- * Data Structures Used:
- * 1. ArrayList<Appointment>: Main appointment schedule storage
- *    - Provides O(1) indexed access for efficient lookups
- *    - Dynamic resizing for flexible appointment management
- *    - Easy iteration for displaying and filtering appointments
- * 
- * 2. Queue<Patient> (LinkedList): Walk-in patient queue
- *    - FIFO (First-In-First-Out) structure ensures fair ordering
- *    - LinkedList implementation provides O(1) enqueue/dequeue operations
- *    - Perfect for managing patients waiting without scheduled appointments
- * 
- * 3. Stack<Appointment>: Appointment history for undo operations
- *    - LIFO (Last-In-First-Out) structure for tracking recent changes
- *    - Enables undo functionality by popping most recent operations
- *    - Maintains audit trail of appointment modifications
- * 
- * Requirements covered: 11-14, 16-19 (Appointment CRUD), 24 (History), 27 (Undo)
+ * AppointmentManager handles all appointment-related operations including
+ * scheduling, updating, cancelling appointments, queue management, and undo functionality.
+ * Uses Stack for undo operations and Queue for appointment processing.
  */
 public class AppointmentManager {
+    // HashMap for O(1) lookup by appointment ID
+    private final Map<Integer, Appointment> appointments;
+    
+    // Stack to support undo functionality - stores last action details
+    private final Stack<AppointmentAction> undoStack;
+    
+    // Queue for processing appointments in order (FIFO)
+    private final Queue<Appointment> appointmentQueue;
+    
+    // Reference to managers for validation
+    private final PatientManager patientManager;
+    private final DoctorManager doctorManager;
     
     /**
-     * Main appointment schedule storage using ArrayList.
-     * ArrayList provides dynamic sizing and fast index-based access for appointment management.
+     * Inner class to represent an appointment action for undo functionality.
      */
-    private ArrayList<Appointment> appointments;
+    private static class AppointmentAction {
+        enum ActionType { ADD, UPDATE, CANCEL, COMPLETE }
+        
+        ActionType type;
+        Appointment appointment;
+        Appointment previousState; // For UPDATE actions
+        
+        AppointmentAction(ActionType type, Appointment appointment, Appointment previousState) {
+            this.type = type;
+            this.appointment = appointment;
+            this.previousState = previousState;
+        }
+    }
     
     /**
-     * Walk-in patient queue using LinkedList as Queue implementation.
-     * Queue follows FIFO principle: patients who arrive first are served first.
-     * LinkedList provides efficient O(1) operations for add (offer) and remove (poll).
+     * Constructor initializes appointment storage and undo/queue structures.
      */
-    private Queue<Patient> walkInQueue;
-    
-    /**
-     * Appointment history stack for undo operations.
-     * Stack follows LIFO principle: most recent operations can be undone first.
-     * Stores cancelled or rescheduled appointments for potential restoration.
-     */
-    private Stack<Appointment> appointmentHistory;
-    
-    private PatientManager patientManager;
-    private DoctorManager doctorManager;
-    private int appointmentIdCounter;
-    
     public AppointmentManager(PatientManager patientManager, DoctorManager doctorManager) {
-        this.appointments = new ArrayList<>();
-        this.walkInQueue = new LinkedList<>();
-        this.appointmentHistory = new Stack<>();
+        this.appointments = new HashMap<>();
+        this.undoStack = new Stack<>();
+        this.appointmentQueue = new LinkedList<>();
         this.patientManager = patientManager;
         this.doctorManager = doctorManager;
-        this.appointmentIdCounter = 1000;
     }
     
     /**
-     * Schedules a new appointment.
-     * Validates patient, doctor, and time slot availability before creating appointment.
+     * Schedule a new appointment.
+     * Validates that patient and doctor exist before creating appointment.
      * 
-     * @param patientId The ID of the patient
-     * @param doctorId The ID of the doctor
-     * @param appointmentDateTime The date and time for the appointment
-     * @return true if appointment was scheduled successfully, false otherwise
+     * @param patient Patient for the appointment
+     * @param doctor Doctor for the appointment
+     * @param dateTime Date and time of appointment
+     * @param reason Reason for visit
+     * @return The newly created Appointment object, or null if validation fails
      */
-    public boolean scheduleAppointment(String patientId, String doctorId, LocalDateTime appointmentDateTime) {
-        Patient patient = patientManager.findPatientById(patientId);
-        if (patient == null) {
-            System.out.println("Error: Patient with ID " + patientId + " not found");
-            return false;
-        }
-        
-        Doctor doctor = doctorManager.findDoctorById(doctorId);
-        if (doctor == null) {
-            System.out.println("Error: Doctor with ID " + doctorId + " not found");
-            return false;
-        }
-        
-        if (!isTimeSlotAvailable(doctorId, appointmentDateTime)) {
-            System.out.println("Error: Time slot is not available for doctor " + doctor.getName());
-            return false;
-        }
-        
-        String appointmentId = generateAppointmentId();
-        Appointment appointment = new Appointment(appointmentId, patient, doctor, appointmentDateTime);
-        appointments.add(appointment);
-        
-        System.out.println("Success: Appointment scheduled successfully");
-        System.out.println("  Appointment ID: " + appointmentId);
-        System.out.println("  Patient: " + patient.getName());
-        System.out.println("  Doctor: " + doctor.getName());
-        System.out.println("  Time: " + appointmentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-        
-        return true;
-    }
-    
-    /**
-     * Checks if a time slot is available for a specific doctor.
-     * A slot is available if no other scheduled appointment exists at that time.
-     * 
-     * @param doctorId The ID of the doctor
-     * @param dateTime The date and time to check
-     * @return true if the time slot is available, false otherwise
-     */
-    public boolean isTimeSlotAvailable(String doctorId, LocalDateTime dateTime) {
-        for (Appointment appointment : appointments) {
-            if (appointment.getDoctor().getDoctorId().equals(doctorId) &&
-                appointment.getAppointmentDateTime().equals(dateTime) &&
-                appointment.getStatus().equals(Appointment.STATUS_SCHEDULED)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    /**
-     * Retrieves all available time slots for a doctor on a specific date.
-     * 
-     * @param doctorId The ID of the doctor
-     * @param date The date to check
-     * @return List of available time slots
-     */
-    public List<LocalDateTime> getAvailableSlots(String doctorId, LocalDateTime date) {
-        List<LocalDateTime> availableSlots = new ArrayList<>();
-        LocalDateTime startOfDay = date.withHour(9).withMinute(0);
-        LocalDateTime endOfDay = date.withHour(17).withMinute(0);
-        
-        for (LocalDateTime slot = startOfDay; slot.isBefore(endOfDay); slot = slot.plusMinutes(30)) {
-            if (isTimeSlotAvailable(doctorId, slot)) {
-                availableSlots.add(slot);
-            }
-        }
-        
-        return availableSlots;
-    }
-    
-    /**
-     * Finds an appointment by its unique ID.
-     * 
-     * @param appointmentId The ID of the appointment
-     * @return The appointment if found, null otherwise
-     */
-    public Appointment findAppointmentById(String appointmentId) {
-        if (appointmentId == null || appointmentId.trim().isEmpty()) {
+    public Appointment scheduleAppointment(Patient patient, Doctor doctor, 
+                                          LocalDateTime dateTime, String reason) {
+        // Validate patient and doctor exist
+        if (patient == null || doctor == null) {
             return null;
         }
         
-        for (Appointment appointment : appointments) {
-            if (appointment.getAppointmentId().equals(appointmentId)) {
-                return appointment;
+        // Check for scheduling conflicts
+        if (hasConflict(doctor, dateTime)) {
+            return null;
+        }
+        
+        // Create new appointment
+        Appointment appointment = new Appointment(patient, doctor, dateTime, reason);
+        appointments.put(appointment.getId(), appointment);
+        
+        // Add to queue for processing
+        appointmentQueue.offer(appointment);
+        
+        // Record action for undo
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.ADD, 
+                                            appointment, null));
+        
+        return appointment;
+    }
+    
+    /**
+     * Check if doctor has a scheduling conflict at the given time.
+     * Considers appointments within 30 minutes as conflicts.
+     */
+    private boolean hasConflict(Doctor doctor, LocalDateTime dateTime) {
+        for (Appointment apt : appointments.values()) {
+            // Only check scheduled or confirmed appointments
+            if ((apt.getStatus() == AppointmentStatus.SCHEDULED || 
+                 apt.getStatus() == AppointmentStatus.CONFIRMED) &&
+                apt.getDoctor().getId() == doctor.getId()) {
+                
+                LocalDateTime aptTime = apt.getAppointmentDateTime();
+                long minutesDiff = Math.abs(java.time.Duration.between(dateTime, aptTime).toMinutes());
+                
+                // If within 30 minutes, it's a conflict
+                if (minutesDiff < 30) {
+                    return true;
+                }
             }
         }
-        return null;
+        return false;
     }
     
     /**
-     * Retrieves all appointments for a specific patient.
-     * 
-     * @param patientId The ID of the patient
-     * @return List of appointments for the patient
+     * Get an appointment by ID.
      */
-    public List<Appointment> getAppointmentsByPatient(String patientId) {
-        return appointments.stream()
-                .filter(appointment -> appointment.getPatient().getPatientId().equals(patientId))
+    public Appointment getAppointmentById(int id) {
+        return appointments.get(id);
+    }
+    
+    /**
+     * Get all appointments in the system.
+     */
+    public List<Appointment> getAllAppointments() {
+        return new ArrayList<>(appointments.values());
+    }
+    
+    /**
+     * Get appointments by status.
+     */
+    public List<Appointment> getAppointmentsByStatus(AppointmentStatus status) {
+        return appointments.values().stream()
+                .filter(apt -> apt.getStatus() == status)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Retrieves all appointments for a specific doctor.
-     * 
-     * @param doctorId The ID of the doctor
-     * @return List of appointments for the doctor
+     * Get appointments for a specific patient.
      */
-    public List<Appointment> getAppointmentsByDoctor(String doctorId) {
-        return appointments.stream()
-                .filter(appointment -> appointment.getDoctor().getDoctorId().equals(doctorId))
+    public List<Appointment> getAppointmentsByPatient(int patientId) {
+        return appointments.values().stream()
+                .filter(apt -> apt.getPatient().getId() == patientId)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Retrieves all scheduled appointments (not cancelled or completed).
-     * 
-     * @return List of scheduled appointments
+     * Get appointments for a specific doctor.
      */
-    public List<Appointment> getScheduledAppointments() {
-        return appointments.stream()
-                .filter(appointment -> appointment.getStatus().equals(Appointment.STATUS_SCHEDULED))
+    public List<Appointment> getAppointmentsByDoctor(int doctorId) {
+        return appointments.values().stream()
+                .filter(apt -> apt.getDoctor().getId() == doctorId)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Cancels an appointment and pushes it to the history stack.
-     * The Stack data structure allows for potential undo of this cancellation.
-     * 
-     * @param appointmentId The ID of the appointment to cancel
-     * @return true if cancellation was successful, false otherwise
+     * Get appointments for a specific date.
      */
-    public boolean cancelAppointment(String appointmentId) {
-        Appointment appointment = findAppointmentById(appointmentId);
+    public List<Appointment> getAppointmentsByDate(LocalDate date) {
+        return appointments.values().stream()
+                .filter(apt -> apt.getAppointmentDateTime().toLocalDate().equals(date))
+                .sorted(Comparator.comparing(Appointment::getAppointmentDateTime))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Update appointment details.
+     */
+    public boolean updateAppointment(int id, LocalDateTime newDateTime, String newReason, String notes) {
+        Appointment appointment = appointments.get(id);
         if (appointment == null) {
-            System.out.println("Error: Appointment with ID " + appointmentId + " not found");
             return false;
         }
         
-        if (appointment.getStatus().equals(Appointment.STATUS_CANCELLED)) {
-            System.out.println("Warning: Appointment is already cancelled");
-            return false;
+        // Create a copy for undo
+        Appointment previousState = cloneAppointment(appointment);
+        
+        // Update appointment
+        if (newDateTime != null) {
+            // Check for conflicts with new time
+            if (hasConflict(appointment.getDoctor(), newDateTime)) {
+                return false;
+            }
+            appointment.setAppointmentDateTime(newDateTime);
         }
+        if (newReason != null) appointment.setReason(newReason);
+        if (notes != null) appointment.setNotes(notes);
         
-        String previousStatus = appointment.getStatus();
-        appointment.setStatus(Appointment.STATUS_CANCELLED);
-        
-        Appointment historyCopy = createAppointmentCopy(appointment);
-        historyCopy.setStatus(previousStatus);
-        appointmentHistory.push(historyCopy);
-        
-        System.out.println("Success: Appointment " + appointmentId + " cancelled");
-        System.out.println("  Patient: " + appointment.getPatient().getName());
-        System.out.println("  Doctor: " + appointment.getDoctor().getName());
-        System.out.println("  Original Time: " + appointment.getAppointmentDateTime().format(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        // Record action for undo
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                                            appointment, previousState));
         
         return true;
     }
     
     /**
-     * Reschedules an existing appointment to a new date and time.
-     * Pushes the original appointment to history stack for potential undo.
-     * 
-     * @param appointmentId The ID of the appointment to reschedule
-     * @param newDateTime The new date and time
-     * @return true if rescheduling was successful, false otherwise
+     * Confirm an appointment.
      */
-    public boolean rescheduleAppointment(String appointmentId, LocalDateTime newDateTime) {
-        Appointment appointment = findAppointmentById(appointmentId);
-        if (appointment == null) {
-            System.out.println("Error: Appointment with ID " + appointmentId + " not found");
+    public boolean confirmAppointment(int id) {
+        Appointment appointment = appointments.get(id);
+        if (appointment == null || appointment.getStatus() != AppointmentStatus.SCHEDULED) {
             return false;
         }
         
-        if (appointment.getStatus().equals(Appointment.STATUS_CANCELLED)) {
-            System.out.println("Error: Cannot reschedule a cancelled appointment");
-            return false;
-        }
+        Appointment previousState = cloneAppointment(appointment);
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
         
-        String doctorId = appointment.getDoctor().getDoctorId();
-        if (!isTimeSlotAvailable(doctorId, newDateTime)) {
-            System.out.println("Error: New time slot is not available");
-            return false;
-        }
-        
-        Appointment historyCopy = createAppointmentCopy(appointment);
-        appointmentHistory.push(historyCopy);
-        
-        LocalDateTime oldDateTime = appointment.getAppointmentDateTime();
-        appointment.setAppointmentDateTime(newDateTime);
-        appointment.setStatus(Appointment.STATUS_RESCHEDULED);
-        
-        System.out.println("Success: Appointment rescheduled");
-        System.out.println("  Appointment ID: " + appointmentId);
-        System.out.println("  Patient: " + appointment.getPatient().getName());
-        System.out.println("  Doctor: " + appointment.getDoctor().getName());
-        System.out.println("  Old Time: " + oldDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-        System.out.println("  New Time: " + newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-        
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                                            appointment, previousState));
         return true;
     }
     
     /**
-     * Updates appointment notes or status.
-     * 
-     * @param appointmentId The ID of the appointment to update
-     * @param notes The notes to add
-     * @param status The new status (optional, can be null to keep current status)
-     * @return true if update was successful, false otherwise
+     * Cancel an appointment.
      */
-    public boolean updateAppointment(String appointmentId, String notes, String status) {
-        Appointment appointment = findAppointmentById(appointmentId);
+    public boolean cancelAppointment(int id) {
+        Appointment appointment = appointments.get(id);
         if (appointment == null) {
-            System.out.println("Error: Appointment with ID " + appointmentId + " not found");
             return false;
         }
         
+        Appointment previousState = cloneAppointment(appointment);
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        
+        // Remove from queue if present
+        appointmentQueue.remove(appointment);
+        
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.CANCEL,
+                                            appointment, previousState));
+        return true;
+    }
+    
+    /**
+     * Mark appointment as completed.
+     */
+    public boolean completeAppointment(int id, String notes) {
+        Appointment appointment = appointments.get(id);
+        if (appointment == null) {
+            return false;
+        }
+        
+        Appointment previousState = cloneAppointment(appointment);
+        appointment.setStatus(AppointmentStatus.COMPLETED);
         if (notes != null) {
             appointment.setNotes(notes);
         }
         
-        if (status != null && !status.trim().isEmpty()) {
-            appointment.setStatus(status);
-        }
+        // Remove from queue if present
+        appointmentQueue.remove(appointment);
         
-        System.out.println("Success: Appointment " + appointmentId + " updated");
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.COMPLETE,
+                                            appointment, previousState));
         return true;
     }
     
     /**
-     * Adds a patient to the walk-in queue.
-     * Queue (FIFO) ensures patients are served in the order they arrive.
-     * 
-     * @param patientId The ID of the patient to add to walk-in queue
-     * @return true if patient was added to queue, false otherwise
+     * Mark appointment as no-show.
      */
-    public boolean addToWalkInQueue(String patientId) {
-        Patient patient = patientManager.findPatientById(patientId);
-        if (patient == null) {
-            System.out.println("Error: Patient with ID " + patientId + " not found");
+    public boolean markNoShow(int id) {
+        Appointment appointment = appointments.get(id);
+        if (appointment == null) {
             return false;
         }
         
-        if (walkInQueue.contains(patient)) {
-            System.out.println("Warning: Patient " + patient.getName() + " is already in the walk-in queue");
-            return false;
-        }
+        Appointment previousState = cloneAppointment(appointment);
+        appointment.setStatus(AppointmentStatus.NO_SHOW);
         
-        walkInQueue.offer(patient);
-        System.out.println("Success: Patient " + patient.getName() + " added to walk-in queue");
-        System.out.println("  Queue position: " + walkInQueue.size());
+        // Remove from queue if present
+        appointmentQueue.remove(appointment);
         
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                                            appointment, previousState));
         return true;
     }
     
     /**
-     * Processes the next patient in the walk-in queue.
-     * Removes and returns the patient at the front of the queue (FIFO).
-     * 
-     * @return The next patient in the queue, or null if queue is empty
+     * Process next appointment in queue.
+     * Changes status from SCHEDULED/CONFIRMED to IN_PROGRESS.
      */
-    public Patient processNextWalkIn() {
-        if (walkInQueue.isEmpty()) {
-            System.out.println("Walk-in queue is empty");
-            return null;
-        }
-        
-        Patient patient = walkInQueue.poll();
-        System.out.println("Processing walk-in patient: " + patient.getName());
-        System.out.println("  Patient ID: " + patient.getPatientId());
-        System.out.println("  Remaining in queue: " + walkInQueue.size());
-        
-        return patient;
-    }
-    
-    /**
-     * Views the next patient in the walk-in queue without removing them.
-     * 
-     * @return The next patient in the queue, or null if queue is empty
-     */
-    public Patient peekNextWalkIn() {
-        return walkInQueue.peek();
-    }
-    
-    /**
-     * Gets the current size of the walk-in queue.
-     * 
-     * @return The number of patients in the walk-in queue
-     */
-    public int getWalkInQueueSize() {
-        return walkInQueue.size();
-    }
-    
-    /**
-     * Displays all patients currently in the walk-in queue.
-     */
-    public void displayWalkInQueue() {
-        if (walkInQueue.isEmpty()) {
-            System.out.println("Walk-in queue is empty");
-            return;
-        }
-        
-        System.out.println("\n===== Walk-In Queue =====");
-        int position = 1;
-        for (Patient patient : walkInQueue) {
-            System.out.println(position + ". " + patient.getName() + " (ID: " + patient.getPatientId() + ")");
-            position++;
-        }
-        System.out.println("Total in queue: " + walkInQueue.size());
-    }
-    
-    /**
-     * Undoes the last cancelled or rescheduled appointment.
-     * Pops from the history stack (LIFO) to restore the most recent change.
-     * 
-     * @return true if undo was successful, false if history is empty
-     */
-    public boolean undoLastOperation() {
-        if (appointmentHistory.isEmpty()) {
-            System.out.println("No operations to undo");
-            return false;
-        }
-        
-        Appointment historicalAppointment = appointmentHistory.pop();
-        Appointment currentAppointment = findAppointmentById(historicalAppointment.getAppointmentId());
-        
-        if (currentAppointment != null) {
-            currentAppointment.setAppointmentDateTime(historicalAppointment.getAppointmentDateTime());
-            currentAppointment.setStatus(historicalAppointment.getStatus());
-            currentAppointment.setNotes(historicalAppointment.getNotes());
+    public Appointment processNextInQueue() {
+        Appointment appointment = appointmentQueue.poll();
+        if (appointment != null && appointments.containsKey(appointment.getId())) {
+            Appointment previousState = cloneAppointment(appointment);
+            appointment.setStatus(AppointmentStatus.IN_PROGRESS);
             
-            System.out.println("Success: Undo operation completed");
-            System.out.println("  Appointment ID: " + currentAppointment.getAppointmentId());
-            System.out.println("  Restored to status: " + historicalAppointment.getStatus());
+            undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                                                appointment, previousState));
+        }
+        return appointment;
+    }
+    
+    /**
+     * Get current queue size.
+     */
+    public int getQueueSize() {
+        return appointmentQueue.size();
+    }
+    
+    /**
+     * View appointments in queue without removing them.
+     */
+    public List<Appointment> viewQueue() {
+        return new ArrayList<>(appointmentQueue);
+    }
+    
+    /**
+     * Undo the last appointment action.
+     * Supports undoing add, update, cancel, and complete actions.
+     * 
+     * @return true if undo was successful, false if nothing to undo
+     */
+    public boolean undoLastAction() {
+        if (undoStack.isEmpty()) {
+            return false;
+        }
+        
+        AppointmentAction action = undoStack.pop();
+        
+        switch (action.type) {
+            case ADD:
+                // Remove the appointment that was added
+                appointments.remove(action.appointment.getId());
+                appointmentQueue.remove(action.appointment);
+                break;
+                
+            case UPDATE:
+            case CANCEL:
+            case COMPLETE:
+                // Restore previous state
+                if (action.previousState != null) {
+                    Appointment current = appointments.get(action.appointment.getId());
+                    if (current != null) {
+                        restoreAppointmentState(current, action.previousState);
+                        
+                        // Re-add to queue if it was scheduled/confirmed
+                        if (current.getStatus() == AppointmentStatus.SCHEDULED ||
+                            current.getStatus() == AppointmentStatus.CONFIRMED) {
+                            if (!appointmentQueue.contains(current)) {
+                                appointmentQueue.offer(current);
+                            }
+                        }
+                    }
+                }
+                break;
         }
         
         return true;
     }
     
     /**
-     * Views the history of operations without modifying the stack.
-     * 
-     * @return List of appointments in history (most recent first)
+     * Check if there are actions that can be undone.
      */
-    public List<Appointment> viewHistory() {
-        return new ArrayList<>(appointmentHistory);
+    public boolean canUndo() {
+        return !undoStack.isEmpty();
     }
     
     /**
-     * Gets the count of items in the history stack.
-     * 
-     * @return The number of historical appointments
+     * Get count of actions that can be undone.
      */
-    public int getHistorySize() {
-        return appointmentHistory.size();
+    public int getUndoStackSize() {
+        return undoStack.size();
     }
     
     /**
-     * Retrieves all appointments in the system.
-     * 
-     * @return List of all appointments
+     * Get completed appointments.
      */
-    public List<Appointment> getAllAppointments() {
-        return new ArrayList<>(appointments);
+    public List<Appointment> getCompletedAppointments() {
+        return getAppointmentsByStatus(AppointmentStatus.COMPLETED);
     }
     
     /**
-     * Sorts appointments by date and time (earliest first).
-     * 
-     * @return Sorted list of appointments
+     * Get appointment history for reporting.
      */
-    public List<Appointment> getAppointmentsSortedByTime() {
-        List<Appointment> sorted = new ArrayList<>(appointments);
-        sorted.sort(Comparator.comparing(Appointment::getAppointmentDateTime));
-        return sorted;
-    }
-    
-    /**
-     * Sorts appointments by doctor name.
-     * 
-     * @return Sorted list of appointments
-     */
-    public List<Appointment> getAppointmentsSortedByDoctor() {
-        List<Appointment> sorted = new ArrayList<>(appointments);
-        sorted.sort(Comparator.comparing(appointment -> appointment.getDoctor().getName()));
-        return sorted;
-    }
-    
-    /**
-     * Sorts appointments by patient name.
-     * 
-     * @return Sorted list of appointments
-     */
-    public List<Appointment> getAppointmentsSortedByPatient() {
-        List<Appointment> sorted = new ArrayList<>(appointments);
-        sorted.sort(Comparator.comparing(appointment -> appointment.getPatient().getName()));
-        return sorted;
-    }
-    
-    /**
-     * Displays all appointments in a formatted table.
-     */
-    public void displayAllAppointments() {
-        if (appointments.isEmpty()) {
-            System.out.println("No appointments scheduled");
-            return;
-        }
-        
-        System.out.println("\n===== Appointment Schedule =====");
-        System.out.println(String.format("%-12s %-20s %-20s %-18s %-12s", 
-                "Appt ID", "Patient", "Doctor", "Date & Time", "Status"));
-        System.out.println("--------------------------------------------------------------------------------");
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        for (Appointment appointment : appointments) {
-            System.out.println(String.format("%-12s %-20s %-20s %-18s %-12s",
-                    appointment.getAppointmentId(),
-                    appointment.getPatient().getName(),
-                    appointment.getDoctor().getName(),
-                    appointment.getAppointmentDateTime().format(formatter),
-                    appointment.getStatus()));
-        }
-        System.out.println("Total appointments: " + appointments.size());
-    }
-    
-    /**
-     * Displays scheduled appointments sorted by time.
-     */
-    public void displayScheduledAppointmentsByTime() {
-        List<Appointment> scheduled = getAppointmentsSortedByTime().stream()
-                .filter(appointment -> appointment.getStatus().equals(Appointment.STATUS_SCHEDULED))
+    public List<Appointment> getAppointmentHistory(LocalDate startDate, LocalDate endDate) {
+        return appointments.values().stream()
+                .filter(apt -> {
+                    LocalDate aptDate = apt.getAppointmentDateTime().toLocalDate();
+                    return !aptDate.isBefore(startDate) && !aptDate.isAfter(endDate);
+                })
+                .sorted(Comparator.comparing(Appointment::getAppointmentDateTime))
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get daily report statistics.
+     */
+    public Map<String, Integer> getDailyStatistics(LocalDate date) {
+        List<Appointment> dailyAppointments = getAppointmentsByDate(date);
         
-        if (scheduled.isEmpty()) {
-            System.out.println("No scheduled appointments");
-            return;
+        Map<String, Integer> stats = new HashMap<>();
+        stats.put("total", dailyAppointments.size());
+        stats.put("scheduled", 0);
+        stats.put("confirmed", 0);
+        stats.put("in_progress", 0);
+        stats.put("completed", 0);
+        stats.put("cancelled", 0);
+        stats.put("no_show", 0);
+        
+        for (Appointment apt : dailyAppointments) {
+            String status = apt.getStatus().toString().toLowerCase();
+            stats.put(status, stats.getOrDefault(status, 0) + 1);
         }
         
-        System.out.println("\n===== Scheduled Appointments (Sorted by Time) =====");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        
-        for (Appointment appointment : scheduled) {
-            System.out.println("Appointment ID: " + appointment.getAppointmentId());
-            System.out.println("  Patient: " + appointment.getPatient().getName() + 
-                    " (ID: " + appointment.getPatient().getPatientId() + ")");
-            System.out.println("  Doctor: " + appointment.getDoctor().getName() + 
-                    " (Specialization: " + appointment.getDoctor().getSpecialization() + ")");
-            System.out.println("  Date & Time: " + appointment.getAppointmentDateTime().format(formatter));
-            if (!appointment.getNotes().isEmpty()) {
-                System.out.println("  Notes: " + appointment.getNotes());
-            }
-            System.out.println("------------------------");
+        return stats;
+    }
+    
+    /**
+     * Clone an appointment for undo functionality.
+     */
+    private Appointment cloneAppointment(Appointment apt) {
+        Appointment clone = new Appointment(apt.getPatient(), apt.getDoctor(),
+                                           apt.getAppointmentDateTime(), apt.getReason());
+        clone.setStatus(apt.getStatus());
+        clone.setNotes(apt.getNotes());
+        return clone;
+    }
+    
+    /**
+     * Restore appointment to previous state.
+     */
+    private void restoreAppointmentState(Appointment current, Appointment previous) {
+        current.setAppointmentDateTime(previous.getAppointmentDateTime());
+        current.setReason(previous.getReason());
+        current.setStatus(previous.getStatus());
+        current.setNotes(previous.getNotes());
+    }
+    
+    /**
+     * Delete an appointment (for administrative purposes).
+     */
+    public boolean deleteAppointment(int id) {
+        Appointment removed = appointments.remove(id);
+        if (removed != null) {
+            appointmentQueue.remove(removed);
+            return true;
         }
+        return false;
     }
     
     /**
-     * Generates a unique appointment ID.
-     * 
-     * @return A unique appointment ID
+     * Get total appointment count.
      */
-    private String generateAppointmentId() {
-        return "APT" + (appointmentIdCounter++);
-    }
-    
-    /**
-     * Creates a deep copy of an appointment for history tracking.
-     * 
-     * @param original The original appointment
-     * @return A copy of the appointment
-     */
-    private Appointment createAppointmentCopy(Appointment original) {
-        Appointment copy = new Appointment(
-                original.getAppointmentId(),
-                original.getPatient(),
-                original.getDoctor(),
-                original.getAppointmentDateTime(),
-                original.getStatus()
-        );
-        copy.setNotes(original.getNotes());
-        return copy;
-    }
-    
-    /**
-     * Clears all appointments (useful for testing).
-     */
-    public void clearAllAppointments() {
-        appointments.clear();
-        walkInQueue.clear();
-        appointmentHistory.clear();
-        System.out.println("All appointments, walk-in queue, and history cleared");
+    public int getAppointmentCount() {
+        return appointments.size();
     }
 }

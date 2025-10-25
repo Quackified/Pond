@@ -2,45 +2,52 @@ package com.clinicapp.model;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Objects;
 
+/**
+ * Appointment model representing a scheduled appointment in the clinic system.
+ * Links patients with doctors at specific times and tracks appointment status.
+ */
 public class Appointment {
-    private String appointmentId;
+    private static int nextId = 1;
+    
+    private final int id;
     private Patient patient;
     private Doctor doctor;
     private LocalDateTime appointmentDateTime;
-    private String status;
+    private String reason;
+    private AppointmentStatus status;
     private String notes;
+    private LocalDateTime createdAt;
     
-    public static final String STATUS_SCHEDULED = "SCHEDULED";
-    public static final String STATUS_COMPLETED = "COMPLETED";
-    public static final String STATUS_CANCELLED = "CANCELLED";
-    public static final String STATUS_RESCHEDULED = "RESCHEDULED";
+    /**
+     * Enum representing the status of an appointment.
+     */
+    public enum AppointmentStatus {
+        SCHEDULED,   // Appointment is scheduled and waiting
+        CONFIRMED,   // Appointment has been confirmed
+        IN_PROGRESS, // Patient is currently being seen
+        COMPLETED,   // Appointment is completed
+        CANCELLED,   // Appointment has been cancelled
+        NO_SHOW      // Patient did not show up
+    }
     
-    public Appointment(String appointmentId, Patient patient, Doctor doctor, LocalDateTime appointmentDateTime) {
-        this.appointmentId = appointmentId;
+    /**
+     * Constructor for creating a new appointment with auto-generated ID.
+     */
+    public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, String reason) {
+        this.id = nextId++;
         this.patient = patient;
         this.doctor = doctor;
         this.appointmentDateTime = appointmentDateTime;
-        this.status = STATUS_SCHEDULED;
+        this.reason = reason;
+        this.status = AppointmentStatus.SCHEDULED;
         this.notes = "";
+        this.createdAt = LocalDateTime.now();
     }
     
-    public Appointment(String appointmentId, Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, String status) {
-        this.appointmentId = appointmentId;
-        this.patient = patient;
-        this.doctor = doctor;
-        this.appointmentDateTime = appointmentDateTime;
-        this.status = status;
-        this.notes = "";
-    }
-    
-    public String getAppointmentId() {
-        return appointmentId;
-    }
-    
-    public void setAppointmentId(String appointmentId) {
-        this.appointmentId = appointmentId;
+    // Getters and Setters
+    public int getId() {
+        return id;
     }
     
     public Patient getPatient() {
@@ -67,11 +74,19 @@ public class Appointment {
         this.appointmentDateTime = appointmentDateTime;
     }
     
-    public String getStatus() {
+    public String getReason() {
+        return reason;
+    }
+    
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+    
+    public AppointmentStatus getStatus() {
         return status;
     }
     
-    public void setStatus(String status) {
+    public void setStatus(AppointmentStatus status) {
         this.status = status;
     }
     
@@ -83,29 +98,44 @@ public class Appointment {
         this.notes = notes;
     }
     
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Appointment that = (Appointment) o;
-        return Objects.equals(appointmentId, that.appointmentId);
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
     
-    @Override
-    public int hashCode() {
-        return Objects.hash(appointmentId);
-    }
-    
+    /**
+     * Get formatted display string for appointment information.
+     */
     @Override
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return "Appointment{" +
-                "appointmentId='" + appointmentId + '\'' +
-                ", patient=" + (patient != null ? patient.getName() : "null") +
-                ", doctor=" + (doctor != null ? doctor.getName() : "null") +
-                ", appointmentDateTime=" + (appointmentDateTime != null ? appointmentDateTime.format(formatter) : "null") +
-                ", status='" + status + '\'' +
-                ", notes='" + notes + '\'' +
-                '}';
+        return String.format("ID: %d | %s | Patient: %s | Dr. %s | %s | Status: %s",
+                           id, appointmentDateTime.format(formatter), patient.getName(), 
+                           doctor.getName(), reason, status);
+    }
+    
+    /**
+     * Get detailed appointment information for display.
+     */
+    public String getDetailedInfo() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n╔════════════════════════════════════════════════════════════════╗\n");
+        sb.append("║                    APPOINTMENT DETAILS                         ║\n");
+        sb.append("╠════════════════════════════════════════════════════════════════╣\n");
+        sb.append(String.format("║ Appointment ID : %-45d ║\n", id));
+        sb.append(String.format("║ Date & Time    : %-45s ║\n", appointmentDateTime.format(formatter)));
+        sb.append(String.format("║ Patient        : %-45s ║\n", patient.getName()));
+        sb.append(String.format("║ Patient ID     : %-45d ║\n", patient.getId()));
+        sb.append(String.format("║ Doctor         : Dr. %-41s ║\n", doctor.getName()));
+        sb.append(String.format("║ Doctor ID      : %-45d ║\n", doctor.getId()));
+        sb.append(String.format("║ Specialization : %-45s ║\n", doctor.getSpecialization()));
+        sb.append(String.format("║ Reason         : %-45s ║\n", reason));
+        sb.append(String.format("║ Status         : %-45s ║\n", status));
+        if (notes != null && !notes.isEmpty()) {
+            sb.append(String.format("║ Notes          : %-45s ║\n", notes));
+        }
+        sb.append(String.format("║ Created At     : %-45s ║\n", createdAt.format(formatter)));
+        sb.append("╚════════════════════════════════════════════════════════════════╝\n");
+        return sb.toString();
     }
 }

@@ -1,8 +1,8 @@
-package clinic.util;
+package com.clinicapp.util;
 
-import clinic.model.Appointment;
-import clinic.model.Doctor;
-import clinic.model.Patient;
+import com.clinicapp.model.Appointment;
+import com.clinicapp.model.Doctor;
+import com.clinicapp.model.Patient;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;

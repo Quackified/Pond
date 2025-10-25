@@ -2,29 +2,44 @@ package com.clinicapp.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
+/**
+ * Doctor model representing a medical professional in the clinic system.
+ * Contains doctor's specialization, availability, and contact information.
+ */
 public class Doctor {
-    private String doctorId;
+    private static int nextId = 1;
+    
+    private final int id;
     private String name;
     private String specialization;
     private String phoneNumber;
-    private List<String> availableTimeSlots;
+    private String email;
+    private List<String> availableDays; // Days of the week (e.g., "Monday", "Tuesday")
+    private String startTime; // e.g., "09:00"
+    private String endTime;   // e.g., "17:00"
+    private boolean isAvailable;
     
-    public Doctor(String doctorId, String name, String specialization, String phoneNumber) {
-        this.doctorId = doctorId;
+    /**
+     * Constructor for creating a new doctor with auto-generated ID.
+     */
+    public Doctor(String name, String specialization, String phoneNumber, 
+                  String email, List<String> availableDays, String startTime, 
+                  String endTime) {
+        this.id = nextId++;
         this.name = name;
         this.specialization = specialization;
         this.phoneNumber = phoneNumber;
-        this.availableTimeSlots = new ArrayList<>();
+        this.email = email;
+        this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>();
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.isAvailable = true;
     }
     
-    public String getDoctorId() {
-        return doctorId;
-    }
-    
-    public void setDoctorId(String doctorId) {
-        this.doctorId = doctorId;
+    // Getters and Setters
+    public int getId() {
+        return id;
     }
     
     public String getName() {
@@ -51,45 +66,73 @@ public class Doctor {
         this.phoneNumber = phoneNumber;
     }
     
-    public List<String> getAvailableTimeSlots() {
-        return availableTimeSlots;
+    public String getEmail() {
+        return email;
     }
     
-    public void setAvailableTimeSlots(List<String> availableTimeSlots) {
-        this.availableTimeSlots = availableTimeSlots;
+    public void setEmail(String email) {
+        this.email = email;
     }
     
-    public void addAvailableTimeSlot(String timeSlot) {
-        if (!this.availableTimeSlots.contains(timeSlot)) {
-            this.availableTimeSlots.add(timeSlot);
-        }
+    public List<String> getAvailableDays() {
+        return new ArrayList<>(availableDays);
     }
     
-    public void removeAvailableTimeSlot(String timeSlot) {
-        this.availableTimeSlots.remove(timeSlot);
+    public void setAvailableDays(List<String> availableDays) {
+        this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>();
     }
     
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Doctor doctor = (Doctor) o;
-        return Objects.equals(doctorId, doctor.doctorId);
+    public String getStartTime() {
+        return startTime;
     }
     
-    @Override
-    public int hashCode() {
-        return Objects.hash(doctorId);
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
     }
     
+    public String getEndTime() {
+        return endTime;
+    }
+    
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+    
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+    
+    public void setAvailable(boolean available) {
+        isAvailable = available;
+    }
+    
+    /**
+     * Get formatted display string for doctor information.
+     */
     @Override
     public String toString() {
-        return "Doctor{" +
-                "doctorId='" + doctorId + '\'' +
-                ", name='" + name + '\'' +
-                ", specialization='" + specialization + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                ", availableTimeSlots=" + availableTimeSlots +
-                '}';
+        String status = isAvailable ? "Available" : "Unavailable";
+        return String.format("ID: %d | Dr. %s | %s | %s | Phone: %s",
+                           id, name, specialization, status, phoneNumber);
+    }
+    
+    /**
+     * Get detailed doctor information for display.
+     */
+    public String getDetailedInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n╔════════════════════════════════════════════════════════════════╗\n");
+        sb.append("║                      DOCTOR DETAILS                            ║\n");
+        sb.append("╠════════════════════════════════════════════════════════════════╣\n");
+        sb.append(String.format("║ Doctor ID      : %-45d ║\n", id));
+        sb.append(String.format("║ Name           : Dr. %-41s ║\n", name));
+        sb.append(String.format("║ Specialization : %-45s ║\n", specialization));
+        sb.append(String.format("║ Phone Number   : %-45s ║\n", phoneNumber));
+        sb.append(String.format("║ Email          : %-45s ║\n", email != null ? email : "N/A"));
+        sb.append(String.format("║ Status         : %-45s ║\n", isAvailable ? "Available" : "Unavailable"));
+        sb.append(String.format("║ Working Hours  : %s - %-36s ║\n", startTime, endTime));
+        sb.append(String.format("║ Available Days : %-45s ║\n", String.join(", ", availableDays)));
+        sb.append("╚════════════════════════════════════════════════════════════════╝\n");
+        return sb.toString();
     }
 }
