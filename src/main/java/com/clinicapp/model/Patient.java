@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 public class Patient {
     private static int nextId = 1;
     
-    private final int id;
+    private int id;
     private String name;
     private LocalDate dateOfBirth;
     private String gender;
@@ -21,7 +21,7 @@ public class Patient {
     private String allergies;
     
     /**
-     * Constructor for creating a new patient with auto-generated ID.
+     * Constructor for creating a new patient with auto-generated ID (console mode).
      */
     public Patient(String name, LocalDate dateOfBirth, String gender, 
                    String phoneNumber, String email, String address, 
@@ -35,6 +35,31 @@ public class Patient {
         this.address = address;
         this.bloodType = bloodType;
         this.allergies = allergies;
+    }
+    
+    /**
+     * Constructor for creating a patient with specific ID (database mode).
+     * Used when loading patients from database.
+     */
+    public Patient(int id, String name, LocalDate dateOfBirth, String gender, 
+                   String phoneNumber, String email, String address, 
+                   String bloodType, String allergies) {
+        this.id = id;
+        this.name = name;
+        this.dateOfBirth = dateOfBirth;
+        this.gender = gender;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.address = address;
+        this.bloodType = bloodType;
+        this.allergies = allergies;
+    }
+    
+    /**
+     * Set the patient ID. Used by DAO layer for database integration.
+     */
+    public void setId(int id) {
+        this.id = id;
     }
     
     // Getters and Setters

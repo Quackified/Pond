@@ -10,7 +10,7 @@ import java.util.List;
 public class Doctor {
     private static int nextId = 1;
     
-    private final int id;
+    private int id;
     private String name;
     private String specialization;
     private String phoneNumber;
@@ -21,7 +21,7 @@ public class Doctor {
     private boolean isAvailable;
     
     /**
-     * Constructor for creating a new doctor with auto-generated ID.
+     * Constructor for creating a new doctor with auto-generated ID (console mode).
      */
     public Doctor(String name, String specialization, String phoneNumber, 
                   String email, List<String> availableDays, String startTime, 
@@ -35,6 +35,31 @@ public class Doctor {
         this.startTime = startTime;
         this.endTime = endTime;
         this.isAvailable = true;
+    }
+    
+    /**
+     * Constructor for creating a doctor with specific ID (database mode).
+     * Used when loading doctors from database.
+     */
+    public Doctor(int id, String name, String specialization, String phoneNumber, 
+                  String email, List<String> availableDays, String startTime, 
+                  String endTime, boolean isAvailable) {
+        this.id = id;
+        this.name = name;
+        this.specialization = specialization;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>();
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.isAvailable = isAvailable;
+    }
+    
+    /**
+     * Set the doctor ID. Used by DAO layer for database integration.
+     */
+    public void setId(int id) {
+        this.id = id;
     }
     
     // Getters and Setters
