@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 public class Appointment {
     private static int nextId = 1;
     
-    private int id;
+    private final int id;
     private Patient patient;
     private Doctor doctor;
     private LocalDateTime appointmentDateTime;
@@ -43,28 +43,6 @@ public class Appointment {
         this.status = AppointmentStatus.SCHEDULED;
         this.notes = "";
         this.createdAt = LocalDateTime.now();
-    }
-    
-    /**
-     * Constructor for creating an appointment with specified ID (from database).
-     */
-    public Appointment(int id, Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, 
-                      String reason, AppointmentStatus status, String notes, LocalDateTime createdAt) {
-        this.id = id;
-        this.patient = patient;
-        this.doctor = doctor;
-        this.appointmentDateTime = appointmentDateTime;
-        this.reason = reason;
-        this.status = status;
-        this.notes = notes;
-        this.createdAt = createdAt;
-    }
-    
-    /**
-     * Set appointment ID (used when loading from database).
-     */
-    public void setId(int id) {
-        this.id = id;
     }
     
     // Getters and Setters

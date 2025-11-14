@@ -10,7 +10,7 @@ import java.util.List;
 public class Doctor {
     private static int nextId = 1;
     
-    private int id;
+    private final int id;
     private String name;
     private String specialization;
     private String phoneNumber;
@@ -35,30 +35,6 @@ public class Doctor {
         this.startTime = startTime;
         this.endTime = endTime;
         this.isAvailable = true;
-    }
-    
-    /**
-     * Constructor for creating a doctor with specified ID (from database).
-     */
-    public Doctor(int id, String name, String specialization, String phoneNumber, 
-                  String email, List<String> availableDays, String startTime, 
-                  String endTime, boolean isAvailable) {
-        this.id = id;
-        this.name = name;
-        this.specialization = specialization;
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>();
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.isAvailable = isAvailable;
-    }
-    
-    /**
-     * Set doctor ID (used when loading from database).
-     */
-    public void setId(int id) {
-        this.id = id;
     }
     
     // Getters and Setters
