@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 public class Appointment {
     private static int nextId = 1;
     
-    private final int id;
+    private int id;
     private Patient patient;
     private Doctor doctor;
     private LocalDateTime appointmentDateTime;
@@ -32,7 +32,7 @@ public class Appointment {
     }
     
     /**
-     * Constructor for creating a new appointment with auto-generated ID.
+     * Constructor for creating a new appointment with auto-generated ID (console mode).
      */
     public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, String reason) {
         this.id = nextId++;
@@ -43,6 +43,29 @@ public class Appointment {
         this.status = AppointmentStatus.SCHEDULED;
         this.notes = "";
         this.createdAt = LocalDateTime.now();
+    }
+    
+    /**
+     * Constructor for creating an appointment with specific ID (database mode).
+     * Used when loading appointments from database.
+     */
+    public Appointment(int id, Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, 
+                      String reason, AppointmentStatus status, String notes) {
+        this.id = id;
+        this.patient = patient;
+        this.doctor = doctor;
+        this.appointmentDateTime = appointmentDateTime;
+        this.reason = reason;
+        this.status = status;
+        this.notes = notes != null ? notes : "";
+        this.createdAt = LocalDateTime.now();
+    }
+    
+    /**
+     * Set the appointment ID. Used by DAO layer for database integration.
+     */
+    public void setId(int id) {
+        this.id = id;
     }
     
     // Getters and Setters
