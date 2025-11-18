@@ -1,7 +1,5 @@
 package com.clinicapp;
 
-import com.clinicapp.ui.ClinicConsoleUI;
-
 /**
  * ClinicAppointmentSystem - Main entry point for the Clinic Appointment Management System.
  * 
@@ -133,17 +131,14 @@ import com.clinicapp.ui.ClinicConsoleUI;
 public class ClinicAppointmentSystem {
     
     /**
-     * Main method - entry point for the application.
-     * Creates and starts the console UI.
+     * Main method - Legacy console entry point (deprecated).
+     * For GUI version, use ClinicManagementGUI instead.
      * 
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-        // Create the UI instance
-        ClinicConsoleUI ui = new ClinicConsoleUI();
-        
-        // Start the application - this enters the main menu loop
-        // The loop continues until the user chooses to exit (option 0)
-        ui.start();
+        System.out.println("Console UI has been deprecated.");
+        System.out.println("Please use the GUI version: java com.clinicapp.ClinicManagementGUI");
+        System.out.println("Or run: ./run.sh");
     }
 }

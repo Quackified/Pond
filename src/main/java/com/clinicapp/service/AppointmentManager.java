@@ -6,6 +6,7 @@ import com.clinicapp.model.Doctor;
 import com.clinicapp.model.Patient;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,30 +63,27 @@ public class AppointmentManager {
      * 
      * @param patient Patient for the appointment
      * @param doctor Doctor for the appointment
-     * @param dateTime Date and time of appointment
+     * @param date Date of appointment
+     * @param startTime Start time of appointment
+     * @param endTime End time of appointment
      * @param reason Reason for visit
      * @return The newly created Appointment object, or null if validation fails
      */
-    public Appointment scheduleAppointment(Patient patient, Doctor doctor, 
-                                          LocalDateTime dateTime, String reason) {
-        // Validate patient and doctor exist
+    public Appointment scheduleAppointment(Patient patient, Doctor doctor, LocalDate date,
+                                          LocalTime startTime, LocalTime endTime, String reason) {
         if (patient == null || doctor == null) {
             return null;
         }
         
-        // Check for scheduling conflicts
-        if (hasConflict(doctor, dateTime)) {
+        if (hasConflict(doctor, date, startTime, endTime)) {
             return null;
         }
         
-        // Create new appointment
-        Appointment appointment = new Appointment(patient, doctor, dateTime, reason);
+        Appointment appointment = new Appointment(patient, doctor, date, startTime, endTime, reason);
         appointments.put(appointment.getId(), appointment);
         
-        // Add to queue for processing
         appointmentQueue.offer(appointment);
         
-        // Record action for undo
         undoStack.push(new AppointmentAction(AppointmentAction.ActionType.ADD, 
                                             appointment, null));
         
@@ -93,26 +91,48 @@ public class AppointmentManager {
     }
     
     /**
-     * Check if doctor has a scheduling conflict at the given time.
-     * Considers appointments within 30 minutes as conflicts.
+     * Schedule a new appointment (legacy method for backwards compatibility).
      */
-    private boolean hasConflict(Doctor doctor, LocalDateTime dateTime) {
+    public Appointment scheduleAppointment(Patient patient, Doctor doctor, 
+                                          LocalDateTime dateTime, String reason) {
+        if (patient == null || doctor == null) {
+            return null;
+        }
+        
+        LocalDate date = dateTime.toLocalDate();
+        LocalTime startTime = dateTime.toLocalTime();
+        LocalTime endTime = startTime.plusMinutes(30);
+        
+        return scheduleAppointment(patient, doctor, date, startTime, endTime, reason);
+    }
+    
+    /**
+     * Check if doctor has a scheduling conflict at the given time.
+     * Checks if time ranges overlap.
+     */
+    private boolean hasConflict(Doctor doctor, LocalDate date, LocalTime startTime, LocalTime endTime) {
         for (Appointment apt : appointments.values()) {
-            // Only check scheduled or confirmed appointments
             if ((apt.getStatus() == AppointmentStatus.SCHEDULED || 
                  apt.getStatus() == AppointmentStatus.CONFIRMED) &&
-                apt.getDoctor().getId() == doctor.getId()) {
+                apt.getDoctor().getId() == doctor.getId() &&
+                apt.getAppointmentDate().equals(date)) {
                 
-                LocalDateTime aptTime = apt.getAppointmentDateTime();
-                long minutesDiff = Math.abs(java.time.Duration.between(dateTime, aptTime).toMinutes());
+                LocalTime aptStart = apt.getStartTime();
+                LocalTime aptEnd = apt.getEndTime();
                 
-                // If within 30 minutes, it's a conflict
-                if (minutesDiff < 30) {
+                if (timesOverlap(startTime, endTime, aptStart, aptEnd)) {
                     return true;
                 }
             }
         }
         return false;
+    }
+    
+    /**
+     * Check if two time ranges overlap.
+     */
+    private boolean timesOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
+        return !start1.isAfter(end2) && !end1.isBefore(start2);
     }
     
     /**
@@ -169,31 +189,46 @@ public class AppointmentManager {
     /**
      * Update appointment details.
      */
+    public boolean updateAppointment(int id, LocalDate newDate, LocalTime newStartTime, 
+                                     LocalTime newEndTime, String newReason, String notes) {
+        Appointment appointment = appointments.get(id);
+        if (appointment == null) {
+            return false;
+        }
+        
+        Appointment previousState = cloneAppointment(appointment);
+        
+        if (newDate != null && newStartTime != null && newEndTime != null) {
+            if (hasConflict(appointment.getDoctor(), newDate, newStartTime, newEndTime)) {
+                return false;
+            }
+            appointment.setAppointmentDate(newDate);
+            appointment.setStartTime(newStartTime);
+            appointment.setEndTime(newEndTime);
+        }
+        if (newReason != null) appointment.setReason(newReason);
+        if (notes != null) appointment.setNotes(notes);
+        
+        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                                            appointment, previousState));
+        
+        return true;
+    }
+    
+    /**
+     * Update appointment details (legacy method).
+     */
     public boolean updateAppointment(int id, LocalDateTime newDateTime, String newReason, String notes) {
         Appointment appointment = appointments.get(id);
         if (appointment == null) {
             return false;
         }
         
-        // Create a copy for undo
-        Appointment previousState = cloneAppointment(appointment);
+        LocalDate newDate = newDateTime != null ? newDateTime.toLocalDate() : null;
+        LocalTime newStartTime = newDateTime != null ? newDateTime.toLocalTime() : null;
+        LocalTime newEndTime = newStartTime != null ? newStartTime.plusMinutes(30) : null;
         
-        // Update appointment
-        if (newDateTime != null) {
-            // Check for conflicts with new time
-            if (hasConflict(appointment.getDoctor(), newDateTime)) {
-                return false;
-            }
-            appointment.setAppointmentDateTime(newDateTime);
-        }
-        if (newReason != null) appointment.setReason(newReason);
-        if (notes != null) appointment.setNotes(notes);
-        
-        // Record action for undo
-        undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
-                                            appointment, previousState));
-        
-        return true;
+        return updateAppointment(id, newDate, newStartTime, newEndTime, newReason, notes);
     }
     
     /**
@@ -412,7 +447,8 @@ public class AppointmentManager {
      */
     private Appointment cloneAppointment(Appointment apt) {
         Appointment clone = new Appointment(apt.getPatient(), apt.getDoctor(),
-                                           apt.getAppointmentDateTime(), apt.getReason());
+                                           apt.getAppointmentDate(), apt.getStartTime(),
+                                           apt.getEndTime(), apt.getReason());
         clone.setStatus(apt.getStatus());
         clone.setNotes(apt.getNotes());
         return clone;
@@ -422,7 +458,9 @@ public class AppointmentManager {
      * Restore appointment to previous state.
      */
     private void restoreAppointmentState(Appointment current, Appointment previous) {
-        current.setAppointmentDateTime(previous.getAppointmentDateTime());
+        current.setAppointmentDate(previous.getAppointmentDate());
+        current.setStartTime(previous.getStartTime());
+        current.setEndTime(previous.getEndTime());
         current.setReason(previous.getReason());
         current.setStatus(previous.getStatus());
         current.setNotes(previous.getNotes());

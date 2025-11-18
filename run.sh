@@ -11,7 +11,7 @@ if [ ! -d "bin" ]; then
     javac -d bin src/main/java/com/clinicapp/model/*.java \
                  src/main/java/com/clinicapp/service/*.java \
                  src/main/java/com/clinicapp/util/*.java \
-                 src/main/java/com/clinicapp/ui/*.java \
+                 src/main/java/com/clinicapp/gui/*.java \
                  src/main/java/com/clinicapp/*.java
     
     if [ $? -ne 0 ]; then
@@ -23,4 +23,4 @@ fi
 
 # Run the application
 echo "Starting Clinic Appointment System..."
-java -cp bin com.clinicapp.ClinicAppointmentSystem
+java -cp bin com.clinicapp.ClinicManagementGUI
