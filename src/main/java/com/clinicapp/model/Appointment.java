@@ -1,11 +1,13 @@
 package com.clinicapp.model;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Appointment model representing a scheduled appointment in the clinic system.
- * Links patients with doctors at specific times and tracks appointment status.
+ * Links patients with doctors at specific dates and times, tracking appointment status.
  */
 public class Appointment {
     private static int nextId = 1;
@@ -13,7 +15,9 @@ public class Appointment {
     private final int id;
     private Patient patient;
     private Doctor doctor;
-    private LocalDateTime appointmentDateTime;
+    private LocalDate appointmentDate;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private String reason;
     private AppointmentStatus status;
     private String notes;
@@ -23,29 +27,45 @@ public class Appointment {
      * Enum representing the status of an appointment.
      */
     public enum AppointmentStatus {
-        SCHEDULED,   // Appointment is scheduled and waiting
-        CONFIRMED,   // Appointment has been confirmed
-        IN_PROGRESS, // Patient is currently being seen
-        COMPLETED,   // Appointment is completed
-        CANCELLED,   // Appointment has been cancelled
-        NO_SHOW      // Patient did not show up
+        SCHEDULED,
+        CONFIRMED,
+        IN_PROGRESS,
+        COMPLETED,
+        CANCELLED,
+        NO_SHOW
     }
     
     /**
      * Constructor for creating a new appointment with auto-generated ID.
      */
-    public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, String reason) {
+    public Appointment(Patient patient, Doctor doctor, LocalDate appointmentDate, 
+                      LocalTime startTime, LocalTime endTime, String reason) {
         this.id = nextId++;
         this.patient = patient;
         this.doctor = doctor;
-        this.appointmentDateTime = appointmentDateTime;
+        this.appointmentDate = appointmentDate;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.reason = reason;
         this.status = AppointmentStatus.SCHEDULED;
         this.notes = "";
         this.createdAt = LocalDateTime.now();
     }
     
-    // Getters and Setters
+    /**
+     * Convenience constructor that accepts LocalDateTime and calculates default end time.
+     * End time is set to 30 minutes after start time by default.
+     * 
+     * @deprecated Use constructor with explicit startTime and endTime
+     */
+    @Deprecated
+    public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, String reason) {
+        this(patient, doctor, appointmentDateTime.toLocalDate(), 
+             appointmentDateTime.toLocalTime(), 
+             appointmentDateTime.toLocalTime().plusMinutes(30), 
+             reason);
+    }
+    
     public int getId() {
         return id;
     }
@@ -66,12 +86,52 @@ public class Appointment {
         this.doctor = doctor;
     }
     
-    public LocalDateTime getAppointmentDateTime() {
-        return appointmentDateTime;
+    public LocalDate getAppointmentDate() {
+        return appointmentDate;
     }
     
-    public void setAppointmentDateTime(LocalDateTime appointmentDateTime) {
-        this.appointmentDateTime = appointmentDateTime;
+    public void setAppointmentDate(LocalDate appointmentDate) {
+        this.appointmentDate = appointmentDate;
+    }
+    
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+    
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+    
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+    
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
+    }
+    
+    /**
+     * Get appointment date and time as LocalDateTime.
+     * Uses the start time for the time component.
+     * 
+     * @return LocalDateTime combining appointmentDate and startTime
+     */
+    public LocalDateTime getAppointmentDateTime() {
+        return LocalDateTime.of(appointmentDate, startTime);
+    }
+    
+    /**
+     * Set appointment date and start time from LocalDateTime.
+     * End time is set to 30 minutes after start time.
+     * 
+     * @param dateTime LocalDateTime to set
+     * @deprecated Use setAppointmentDate and setStartTime/setEndTime separately
+     */
+    @Deprecated
+    public void setAppointmentDateTime(LocalDateTime dateTime) {
+        this.appointmentDate = dateTime.toLocalDate();
+        this.startTime = dateTime.toLocalTime();
+        this.endTime = dateTime.toLocalTime().plusMinutes(30);
     }
     
     public String getReason() {
@@ -102,28 +162,34 @@ public class Appointment {
         return createdAt;
     }
     
-    /**
-     * Get formatted display string for appointment information.
-     */
     @Override
     public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return String.format("ID: %d | %s | Patient: %s | Dr. %s | %s | Status: %s",
-                           id, appointmentDateTime.format(formatter), patient.getName(), 
-                           doctor.getName(), reason, status);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        return String.format("ID: %d | %s %s-%s | Patient: %s | Dr. %s | %s | Status: %s",
+                           id, 
+                           appointmentDate.format(dateFormatter),
+                           startTime.format(timeFormatter),
+                           endTime.format(timeFormatter),
+                           patient.getName(), 
+                           doctor.getName(), 
+                           reason, 
+                           status);
     }
     
-    /**
-     * Get detailed appointment information for display.
-     */
     public String getDetailedInfo() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        
         StringBuilder sb = new StringBuilder();
         sb.append("\n╔════════════════════════════════════════════════════════════════╗\n");
         sb.append("║                    APPOINTMENT DETAILS                         ║\n");
         sb.append("╠════════════════════════════════════════════════════════════════╣\n");
         sb.append(String.format("║ Appointment ID : %-45d ║\n", id));
-        sb.append(String.format("║ Date & Time    : %-45s ║\n", appointmentDateTime.format(formatter)));
+        sb.append(String.format("║ Date           : %-45s ║\n", appointmentDate.format(dateFormatter)));
+        sb.append(String.format("║ Start Time     : %-45s ║\n", startTime.format(timeFormatter)));
+        sb.append(String.format("║ End Time       : %-45s ║\n", endTime.format(timeFormatter)));
         sb.append(String.format("║ Patient        : %-45s ║\n", patient.getName()));
         sb.append(String.format("║ Patient ID     : %-45d ║\n", patient.getId()));
         sb.append(String.format("║ Doctor         : Dr. %-41s ║\n", doctor.getName()));
@@ -134,7 +200,7 @@ public class Appointment {
         if (notes != null && !notes.isEmpty()) {
             sb.append(String.format("║ Notes          : %-45s ║\n", notes));
         }
-        sb.append(String.format("║ Created At     : %-45s ║\n", createdAt.format(formatter)));
+        sb.append(String.format("║ Created At     : %-45s ║\n", createdAt.format(dateTimeFormatter)));
         sb.append("╚════════════════════════════════════════════════════════════════╝\n");
         return sb.toString();
     }

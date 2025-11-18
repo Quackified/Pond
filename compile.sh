@@ -15,7 +15,6 @@ javac -d bin \
     src/main/java/com/clinicapp/model/*.java \
     src/main/java/com/clinicapp/service/*.java \
     src/main/java/com/clinicapp/util/*.java \
-    src/main/java/com/clinicapp/ui/*.java \
     src/main/java/com/clinicapp/*.java
 
 # Check compilation result

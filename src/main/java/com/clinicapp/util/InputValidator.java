@@ -1,16 +1,15 @@
 package com.clinicapp.util;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Scanner;
 import java.util.regex.Pattern;
 
 /**
- * InputValidator provides utility methods for validating and parsing user input.
- * Ensures data integrity and provides user-friendly error messages.
+ * InputValidator provides pure validation methods for user input.
+ * All methods are static and do not perform any console I/O.
+ * This class is designed to work with Java Swing GUI applications.
  */
 public class InputValidator {
     
@@ -27,268 +26,226 @@ public class InputValidator {
         DateTimeFormatter.ofPattern("HH:mm");
     
     /**
-     * Read and validate integer input within a range.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @param min Minimum value (inclusive)
-     * @param max Maximum value (inclusive)
-     * @return Valid integer within range
-     */
-    public static int readInt(Scanner scanner, String prompt, int min, int max) {
-        while (true) {
-            System.out.print(prompt);
-            try {
-                String input = scanner.nextLine().trim();
-                int value = Integer.parseInt(input);
-                
-                if (value >= min && value <= max) {
-                    return value;
-                } else {
-                    DisplayHelper.displayError(
-                        String.format("Please enter a number between %d and %d.", min, max));
-                }
-            } catch (NumberFormatException e) {
-                DisplayHelper.displayError("Invalid input. Please enter a valid number.");
-            }
-        }
-    }
-    
-    /**
-     * Read non-empty string input.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @return Non-empty trimmed string
-     */
-    public static String readNonEmptyString(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String input = scanner.nextLine().trim();
-            
-            if (!input.isEmpty()) {
-                return input;
-            } else {
-                DisplayHelper.displayError("Input cannot be empty. Please try again.");
-            }
-        }
-    }
-    
-    /**
-     * Read optional string input (can be empty).
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @return Trimmed string or null if empty
-     */
-    public static String readOptionalString(Scanner scanner, String prompt) {
-        System.out.print(prompt);
-        String input = scanner.nextLine().trim();
-        return input.isEmpty() ? null : input;
-    }
-    
-    /**
-     * Read and validate email address.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @param optional If true, allows empty input
-     * @return Valid email or null if optional and empty
-     */
-    public static String readEmail(Scanner scanner, String prompt, boolean optional) {
-        while (true) {
-            System.out.print(prompt);
-            String input = scanner.nextLine().trim();
-            
-            if (input.isEmpty() && optional) {
-                return null;
-            }
-            
-            if (EMAIL_PATTERN.matcher(input).matches()) {
-                return input;
-            } else {
-                DisplayHelper.displayError("Invalid email format. Please enter a valid email address.");
-            }
-        }
-    }
-    
-    /**
-     * Read and validate phone number.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @return Valid phone number
-     */
-    public static String readPhoneNumber(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String input = scanner.nextLine().trim();
-            
-            if (PHONE_PATTERN.matcher(input).matches()) {
-                return input;
-            } else {
-                DisplayHelper.displayError(
-                    "Invalid phone number. Please enter 10-15 digits (optionally starting with +).");
-            }
-        }
-    }
-    
-    /**
-     * Read and validate date in yyyy-MM-dd format.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @param allowFuture Whether future dates are allowed
-     * @param allowPast Whether past dates are allowed
-     * @return Valid LocalDate
-     */
-    public static LocalDate readDate(Scanner scanner, String prompt, 
-                                     boolean allowFuture, boolean allowPast) {
-        while (true) {
-            System.out.print(prompt + " (yyyy-MM-dd): ");
-            String input = scanner.nextLine().trim();
-            
-            try {
-                LocalDate date = LocalDate.parse(input, DATE_FORMATTER);
-                LocalDate today = LocalDate.now();
-                
-                if (!allowFuture && date.isAfter(today)) {
-                    DisplayHelper.displayError("Future dates are not allowed.");
-                    continue;
-                }
-                
-                if (!allowPast && date.isBefore(today)) {
-                    DisplayHelper.displayError("Past dates are not allowed.");
-                    continue;
-                }
-                
-                return date;
-            } catch (DateTimeParseException e) {
-                DisplayHelper.displayError(
-                    "Invalid date format. Please use yyyy-MM-dd (e.g., 2024-12-25).");
-            }
-        }
-    }
-    
-    /**
-     * Read and validate time in HH:mm format.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @return Valid LocalTime
-     */
-    public static LocalTime readTime(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.print(prompt + " (HH:mm): ");
-            String input = scanner.nextLine().trim();
-            
-            try {
-                return LocalTime.parse(input, TIME_FORMATTER);
-            } catch (DateTimeParseException e) {
-                DisplayHelper.displayError(
-                    "Invalid time format. Please use HH:mm (e.g., 14:30).");
-            }
-        }
-    }
-    
-    /**
-     * Read and validate datetime.
-     * 
-     * @param scanner Scanner for input
-     * @return Valid LocalDateTime
-     */
-    public static LocalDateTime readDateTime(Scanner scanner) {
-        LocalDate date = readDate(scanner, "Enter date", true, false);
-        LocalTime time = readTime(scanner, "Enter time");
-        return LocalDateTime.of(date, time);
-    }
-    
-    /**
-     * Read gender with validation.
-     * 
-     * @param scanner Scanner for input
-     * @return Valid gender string
-     */
-    public static String readGender(Scanner scanner) {
-        while (true) {
-            System.out.print("Enter gender (Male/Female/Other): ");
-            String input = scanner.nextLine().trim();
-            
-            if (input.equalsIgnoreCase("Male") || 
-                input.equalsIgnoreCase("Female") || 
-                input.equalsIgnoreCase("Other")) {
-                return capitalize(input);
-            } else {
-                DisplayHelper.displayError("Please enter Male, Female, or Other.");
-            }
-        }
-    }
-    
-    /**
-     * Read blood type with validation.
-     * 
-     * @param scanner Scanner for input
-     * @param optional If true, allows empty input
-     * @return Valid blood type or null if optional and empty
-     */
-    public static String readBloodType(Scanner scanner, boolean optional) {
-        String[] validTypes = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"};
-        
-        while (true) {
-            System.out.print("Enter blood type (A+, A-, B+, B-, AB+, AB-, O+, O-)" + 
-                           (optional ? " [optional]" : "") + ": ");
-            String input = scanner.nextLine().trim().toUpperCase();
-            
-            if (input.isEmpty() && optional) {
-                return null;
-            }
-            
-            for (String type : validTypes) {
-                if (type.equals(input)) {
-                    return input;
-                }
-            }
-            
-            DisplayHelper.displayError("Invalid blood type. Please enter a valid blood type.");
-        }
-    }
-    
-    /**
-     * Read yes/no confirmation.
-     * 
-     * @param scanner Scanner for input
-     * @param prompt Prompt message
-     * @return true for yes, false for no
-     */
-    public static boolean readConfirmation(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.print(prompt + " (yes/no): ");
-            String input = scanner.nextLine().trim().toLowerCase();
-            
-            if (input.equals("yes") || input.equals("y")) {
-                return true;
-            } else if (input.equals("no") || input.equals("n")) {
-                return false;
-            } else {
-                DisplayHelper.displayError("Please enter 'yes' or 'no'.");
-            }
-        }
-    }
-    
-    /**
-     * Capitalize first letter of string.
-     */
-    private static String capitalize(String str) {
-        if (str == null || str.isEmpty()) {
-            return str;
-        }
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
-    }
-    
-    /**
      * Validate that a string is not null and not empty after trimming.
+     * 
+     * @param str String to validate
+     * @return true if valid, false otherwise
      */
     public static boolean isValidString(String str) {
         return str != null && !str.trim().isEmpty();
+    }
+    
+    /**
+     * Validate email address format.
+     * 
+     * @param email Email address to validate
+     * @return true if valid email format, false otherwise
+     */
+    public static boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        return EMAIL_PATTERN.matcher(email.trim()).matches();
+    }
+    
+    /**
+     * Validate phone number format (10-15 digits, optionally starting with +).
+     * 
+     * @param phoneNumber Phone number to validate
+     * @return true if valid phone format, false otherwise
+     */
+    public static boolean isValidPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            return false;
+        }
+        return PHONE_PATTERN.matcher(phoneNumber.trim()).matches();
+    }
+    
+    /**
+     * Validate and parse date string in yyyy-MM-dd format.
+     * 
+     * @param dateStr Date string to parse
+     * @return LocalDate if valid, null otherwise
+     */
+    public static LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dateStr.trim(), DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Validate date string format.
+     * 
+     * @param dateStr Date string to validate
+     * @return true if valid date format, false otherwise
+     */
+    public static boolean isValidDate(String dateStr) {
+        return parseDate(dateStr) != null;
+    }
+    
+    /**
+     * Validate that date is not in the past.
+     * 
+     * @param date Date to validate
+     * @return true if date is today or in the future, false otherwise
+     */
+    public static boolean isNotPastDate(LocalDate date) {
+        if (date == null) {
+            return false;
+        }
+        return !date.isBefore(LocalDate.now());
+    }
+    
+    /**
+     * Validate that date is not in the future.
+     * 
+     * @param date Date to validate
+     * @return true if date is today or in the past, false otherwise
+     */
+    public static boolean isNotFutureDate(LocalDate date) {
+        if (date == null) {
+            return false;
+        }
+        return !date.isAfter(LocalDate.now());
+    }
+    
+    /**
+     * Validate and parse time string in HH:mm format.
+     * 
+     * @param timeStr Time string to parse
+     * @return LocalTime if valid, null otherwise
+     */
+    public static LocalTime parseTime(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(timeStr.trim(), TIME_FORMATTER);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Validate time string format.
+     * 
+     * @param timeStr Time string to validate
+     * @return true if valid time format, false otherwise
+     */
+    public static boolean isValidTime(String timeStr) {
+        return parseTime(timeStr) != null;
+    }
+    
+    /**
+     * Validate gender value (Male, Female, or Other).
+     * 
+     * @param gender Gender string to validate
+     * @return true if valid gender, false otherwise
+     */
+    public static boolean isValidGender(String gender) {
+        if (gender == null || gender.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = gender.trim();
+        return normalized.equalsIgnoreCase("Male") || 
+               normalized.equalsIgnoreCase("Female") || 
+               normalized.equalsIgnoreCase("Other");
+    }
+    
+    /**
+     * Normalize gender string to proper case.
+     * 
+     * @param gender Gender string to normalize
+     * @return Normalized gender string (Male/Female/Other) or null if invalid
+     */
+    public static String normalizeGender(String gender) {
+        if (!isValidGender(gender)) {
+            return null;
+        }
+        String normalized = gender.trim();
+        if (normalized.equalsIgnoreCase("Male")) {
+            return "Male";
+        } else if (normalized.equalsIgnoreCase("Female")) {
+            return "Female";
+        } else {
+            return "Other";
+        }
+    }
+    
+    /**
+     * Validate blood type (A+, A-, B+, B-, AB+, AB-, O+, O-).
+     * 
+     * @param bloodType Blood type string to validate
+     * @return true if valid blood type, false otherwise
+     */
+    public static boolean isValidBloodType(String bloodType) {
+        if (bloodType == null || bloodType.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = bloodType.trim().toUpperCase();
+        return normalized.equals("A+") || normalized.equals("A-") ||
+               normalized.equals("B+") || normalized.equals("B-") ||
+               normalized.equals("AB+") || normalized.equals("AB-") ||
+               normalized.equals("O+") || normalized.equals("O-");
+    }
+    
+    /**
+     * Normalize blood type string to uppercase.
+     * 
+     * @param bloodType Blood type string to normalize
+     * @return Normalized blood type string or null if invalid
+     */
+    public static String normalizeBloodType(String bloodType) {
+        if (!isValidBloodType(bloodType)) {
+            return null;
+        }
+        return bloodType.trim().toUpperCase();
+    }
+    
+    /**
+     * Validate integer within a range.
+     * 
+     * @param value Value to validate
+     * @param min Minimum value (inclusive)
+     * @param max Maximum value (inclusive)
+     * @return true if value is within range, false otherwise
+     */
+    public static boolean isInRange(int value, int min, int max) {
+        return value >= min && value <= max;
+    }
+    
+    /**
+     * Parse integer from string.
+     * 
+     * @param str String to parse
+     * @return Integer value or null if invalid
+     */
+    public static Integer parseInt(String str) {
+        if (str == null || str.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(str.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Validate that integer string is within a range.
+     * 
+     * @param str String to parse and validate
+     * @param min Minimum value (inclusive)
+     * @param max Maximum value (inclusive)
+     * @return true if string represents a valid integer within range, false otherwise
+     */
+    public static boolean isValidIntInRange(String str, int min, int max) {
+        Integer value = parseInt(str);
+        return value != null && isInRange(value, min, max);
     }
 }
