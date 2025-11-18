@@ -1,5 +1,7 @@
 package com.clinicapp.gui;
 
+import com.clinicapp.io.CsvExporter;
+import com.clinicapp.io.CsvImporter;
 import com.clinicapp.model.Appointment;
 import com.clinicapp.model.Appointment.AppointmentStatus;
 import com.clinicapp.model.Doctor;
@@ -10,8 +12,10 @@ import com.clinicapp.service.PatientManager;
 import com.clinicapp.util.InputValidator;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -57,6 +61,8 @@ public class AppointmentPanel extends JPanel {
         JButton confirmButton = new JButton("Confirm");
         JButton completeButton = new JButton("Complete");
         JButton cancelButton = new JButton("Cancel Appointment");
+        JButton exportButton = new JButton("Export to CSV");
+        JButton importButton = new JButton("Import from CSV");
         JButton refreshButton = new JButton("Refresh");
         
         scheduleButton.addActionListener(e -> showScheduleDialog());
@@ -65,6 +71,8 @@ public class AppointmentPanel extends JPanel {
         confirmButton.addActionListener(e -> confirmAppointment());
         completeButton.addActionListener(e -> completeAppointment());
         cancelButton.addActionListener(e -> cancelAppointment());
+        exportButton.addActionListener(e -> exportAppointments());
+        importButton.addActionListener(e -> importAppointments());
         refreshButton.addActionListener(e -> refreshTable());
         
         buttonPanel.add(scheduleButton);
@@ -73,6 +81,8 @@ public class AppointmentPanel extends JPanel {
         buttonPanel.add(confirmButton);
         buttonPanel.add(completeButton);
         buttonPanel.add(cancelButton);
+        buttonPanel.add(exportButton);
+        buttonPanel.add(importButton);
         buttonPanel.add(refreshButton);
         
         add(scrollPane, BorderLayout.CENTER);
@@ -393,6 +403,60 @@ public class AppointmentPanel extends JPanel {
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to cancel appointment", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+    
+    private void exportAppointments() {
+        List<Appointment> appointments = appointmentManager.getAllAppointments();
+        if (appointments.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No appointments to export", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        try {
+            String fileName = CsvExporter.exportAppointments(appointments);
+            JOptionPane.showMessageDialog(this, 
+                "Appointments exported successfully!\nFile: " + fileName, 
+                "Export Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to export appointments: " + e.getMessage(), 
+                "Export Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void importAppointments() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select CSV file to import");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            
+            CsvImporter.ImportResult importResult = CsvImporter.importAppointments(
+                selectedFile.getAbsolutePath(), appointmentManager, patientManager, doctorManager
+            );
+            
+            StringBuilder message = new StringBuilder();
+            message.append("Import completed!\n");
+            message.append("Success: ").append(importResult.successCount).append("\n");
+            message.append("Errors: ").append(importResult.errorCount).append("\n");
+            
+            if (!importResult.errors.isEmpty()) {
+                message.append("\nError details:\n");
+                for (String error : importResult.errors) {
+                    message.append("- ").append(error).append("\n");
+                }
+            }
+            
+            JOptionPane.showMessageDialog(this, message.toString(), 
+                "Import Results", 
+                importResult.errorCount > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
+            
+            refreshTable();
         }
     }
 }

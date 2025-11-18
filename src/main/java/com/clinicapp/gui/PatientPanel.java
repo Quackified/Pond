@@ -1,12 +1,16 @@
 package com.clinicapp.gui;
 
+import com.clinicapp.io.CsvExporter;
+import com.clinicapp.io.CsvImporter;
 import com.clinicapp.model.Patient;
 import com.clinicapp.service.PatientManager;
 import com.clinicapp.util.InputValidator;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -42,18 +46,24 @@ public class PatientPanel extends JPanel {
         JButton viewButton = new JButton("View Details");
         JButton updateButton = new JButton("Update Patient");
         JButton deleteButton = new JButton("Delete Patient");
+        JButton exportButton = new JButton("Export to CSV");
+        JButton importButton = new JButton("Import from CSV");
         JButton refreshButton = new JButton("Refresh");
         
         addButton.addActionListener(e -> showAddPatientDialog());
         viewButton.addActionListener(e -> showPatientDetails());
         updateButton.addActionListener(e -> showUpdatePatientDialog());
         deleteButton.addActionListener(e -> deletePatient());
+        exportButton.addActionListener(e -> exportPatients());
+        importButton.addActionListener(e -> importPatients());
         refreshButton.addActionListener(e -> refreshTable());
         
         buttonPanel.add(addButton);
         buttonPanel.add(viewButton);
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
+        buttonPanel.add(exportButton);
+        buttonPanel.add(importButton);
         buttonPanel.add(refreshButton);
         
         add(scrollPane, BorderLayout.CENTER);
@@ -303,6 +313,60 @@ public class PatientPanel extends JPanel {
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to delete patient", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+    
+    private void exportPatients() {
+        List<Patient> patients = patientManager.getAllPatients();
+        if (patients.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No patients to export", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        try {
+            String fileName = CsvExporter.exportPatients(patients);
+            JOptionPane.showMessageDialog(this, 
+                "Patients exported successfully!\nFile: " + fileName, 
+                "Export Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to export patients: " + e.getMessage(), 
+                "Export Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void importPatients() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select CSV file to import");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            
+            CsvImporter.ImportResult importResult = CsvImporter.importPatients(
+                selectedFile.getAbsolutePath(), patientManager
+            );
+            
+            StringBuilder message = new StringBuilder();
+            message.append("Import completed!\n");
+            message.append("Success: ").append(importResult.successCount).append("\n");
+            message.append("Errors: ").append(importResult.errorCount).append("\n");
+            
+            if (!importResult.errors.isEmpty()) {
+                message.append("\nError details:\n");
+                for (String error : importResult.errors) {
+                    message.append("- ").append(error).append("\n");
+                }
+            }
+            
+            JOptionPane.showMessageDialog(this, message.toString(), 
+                "Import Results", 
+                importResult.errorCount > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
+            
+            refreshTable();
         }
     }
 }

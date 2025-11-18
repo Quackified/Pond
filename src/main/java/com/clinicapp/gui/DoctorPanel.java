@@ -1,12 +1,16 @@
 package com.clinicapp.gui;
 
+import com.clinicapp.io.CsvExporter;
+import com.clinicapp.io.CsvImporter;
 import com.clinicapp.model.Doctor;
 import com.clinicapp.service.DoctorManager;
 import com.clinicapp.util.InputValidator;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 
 public class DoctorPanel extends JPanel {
@@ -42,6 +46,8 @@ public class DoctorPanel extends JPanel {
         JButton updateButton = new JButton("Update Doctor");
         JButton deleteButton = new JButton("Delete Doctor");
         JButton toggleAvailButton = new JButton("Toggle Availability");
+        JButton exportButton = new JButton("Export to CSV");
+        JButton importButton = new JButton("Import from CSV");
         JButton refreshButton = new JButton("Refresh");
         
         addButton.addActionListener(e -> showAddDoctorDialog());
@@ -49,6 +55,8 @@ public class DoctorPanel extends JPanel {
         updateButton.addActionListener(e -> showUpdateDoctorDialog());
         deleteButton.addActionListener(e -> deleteDoctor());
         toggleAvailButton.addActionListener(e -> toggleAvailability());
+        exportButton.addActionListener(e -> exportDoctors());
+        importButton.addActionListener(e -> importDoctors());
         refreshButton.addActionListener(e -> refreshTable());
         
         buttonPanel.add(addButton);
@@ -56,6 +64,8 @@ public class DoctorPanel extends JPanel {
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(toggleAvailButton);
+        buttonPanel.add(exportButton);
+        buttonPanel.add(importButton);
         buttonPanel.add(refreshButton);
         
         add(scrollPane, BorderLayout.CENTER);
@@ -288,6 +298,60 @@ public class DoctorPanel extends JPanel {
                 "Doctor availability updated to: " + (doctor.isAvailable() ? "Available" : "Unavailable"), 
                 "Success", 
                 JOptionPane.INFORMATION_MESSAGE);
+            refreshTable();
+        }
+    }
+    
+    private void exportDoctors() {
+        List<Doctor> doctors = doctorManager.getAllDoctors();
+        if (doctors.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No doctors to export", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        try {
+            String fileName = CsvExporter.exportDoctors(doctors);
+            JOptionPane.showMessageDialog(this, 
+                "Doctors exported successfully!\nFile: " + fileName, 
+                "Export Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to export doctors: " + e.getMessage(), 
+                "Export Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void importDoctors() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select CSV file to import");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            
+            CsvImporter.ImportResult importResult = CsvImporter.importDoctors(
+                selectedFile.getAbsolutePath(), doctorManager
+            );
+            
+            StringBuilder message = new StringBuilder();
+            message.append("Import completed!\n");
+            message.append("Success: ").append(importResult.successCount).append("\n");
+            message.append("Errors: ").append(importResult.errorCount).append("\n");
+            
+            if (!importResult.errors.isEmpty()) {
+                message.append("\nError details:\n");
+                for (String error : importResult.errors) {
+                    message.append("- ").append(error).append("\n");
+                }
+            }
+            
+            JOptionPane.showMessageDialog(this, message.toString(), 
+                "Import Results", 
+                importResult.errorCount > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
+            
             refreshTable();
         }
     }
