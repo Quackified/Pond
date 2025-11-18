@@ -1,11 +1,9 @@
 package com.clinicapp;
 
-import com.clinicapp.ui.ClinicConsoleUI;
-
 /**
  * ClinicAppointmentSystem - Main entry point for the Clinic Appointment Management System.
  * 
- * This application provides a comprehensive console-based interface for managing:
+ * This application provides a comprehensive interface for managing:
  * - Patient records (registration, updates, searches)
  * - Doctor profiles (specializations, availability, schedules)
  * - Appointments (scheduling, confirmation, cancellation, completion)
@@ -66,8 +64,8 @@ import com.clinicapp.ui.ClinicConsoleUI;
  * DESIGN PATTERNS:
  * ===============
  * - Manager Pattern: Separate managers for Patient, Doctor, and Appointment operations
- * - MVC-like Structure: UI layer (ClinicConsoleUI) separate from business logic (Managers)
- * - Utility Classes: DisplayHelper for formatting, InputValidator for validation
+ * - MVC-like Structure: UI layer separate from business logic (Managers)
+ * - Utility Classes: InputValidator for validation
  * 
  * VALIDATION & ERROR HANDLING:
  * ===========================
@@ -134,16 +132,13 @@ public class ClinicAppointmentSystem {
     
     /**
      * Main method - entry point for the application.
-     * Creates and starts the console UI.
+     * This is a placeholder for future GUI integration.
      * 
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-        // Create the UI instance
-        ClinicConsoleUI ui = new ClinicConsoleUI();
-        
-        // Start the application - this enters the main menu loop
-        // The loop continues until the user chooses to exit (option 0)
-        ui.start();
+        System.out.println("Clinic Appointment Management System");
+        System.out.println("GUI implementation coming soon...");
+        System.out.println("The console UI has been removed in favor of a Swing-based GUI.");
     }
 }

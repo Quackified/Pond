@@ -45,11 +45,10 @@ public class InputValidator {
                 if (value >= min && value <= max) {
                     return value;
                 } else {
-                    DisplayHelper.displayError(
-                        String.format("Please enter a number between %d and %d.", min, max));
+                    System.out.println("Error: Please enter a number between " + min + " and " + max + ".");
                 }
             } catch (NumberFormatException e) {
-                DisplayHelper.displayError("Invalid input. Please enter a valid number.");
+                System.out.println("Error: Invalid input. Please enter a valid number.");
             }
         }
     }
@@ -69,7 +68,7 @@ public class InputValidator {
             if (!input.isEmpty()) {
                 return input;
             } else {
-                DisplayHelper.displayError("Input cannot be empty. Please try again.");
+                System.out.println("Error: Input cannot be empty. Please try again.");
             }
         }
     }
@@ -107,7 +106,7 @@ public class InputValidator {
             if (EMAIL_PATTERN.matcher(input).matches()) {
                 return input;
             } else {
-                DisplayHelper.displayError("Invalid email format. Please enter a valid email address.");
+                System.out.println("Error: Invalid email format. Please enter a valid email address.");
             }
         }
     }
@@ -127,8 +126,7 @@ public class InputValidator {
             if (PHONE_PATTERN.matcher(input).matches()) {
                 return input;
             } else {
-                DisplayHelper.displayError(
-                    "Invalid phone number. Please enter 10-15 digits (optionally starting with +).");
+                System.out.println("Error: Invalid phone number. Please enter 10-15 digits (optionally starting with +).");
             }
         }
     }
@@ -153,19 +151,18 @@ public class InputValidator {
                 LocalDate today = LocalDate.now();
                 
                 if (!allowFuture && date.isAfter(today)) {
-                    DisplayHelper.displayError("Future dates are not allowed.");
+                    System.out.println("Error: Future dates are not allowed.");
                     continue;
                 }
                 
                 if (!allowPast && date.isBefore(today)) {
-                    DisplayHelper.displayError("Past dates are not allowed.");
+                    System.out.println("Error: Past dates are not allowed.");
                     continue;
                 }
                 
                 return date;
             } catch (DateTimeParseException e) {
-                DisplayHelper.displayError(
-                    "Invalid date format. Please use yyyy-MM-dd (e.g., 2024-12-25).");
+                System.out.println("Error: Invalid date format. Please use yyyy-MM-dd (e.g., 2024-12-25).");
             }
         }
     }
@@ -185,8 +182,7 @@ public class InputValidator {
             try {
                 return LocalTime.parse(input, TIME_FORMATTER);
             } catch (DateTimeParseException e) {
-                DisplayHelper.displayError(
-                    "Invalid time format. Please use HH:mm (e.g., 14:30).");
+                System.out.println("Error: Invalid time format. Please use HH:mm (e.g., 14:30).");
             }
         }
     }
@@ -219,7 +215,7 @@ public class InputValidator {
                 input.equalsIgnoreCase("Other")) {
                 return capitalize(input);
             } else {
-                DisplayHelper.displayError("Please enter Male, Female, or Other.");
+                System.out.println("Error: Please enter Male, Female, or Other.");
             }
         }
     }
@@ -249,7 +245,7 @@ public class InputValidator {
                 }
             }
             
-            DisplayHelper.displayError("Invalid blood type. Please enter a valid blood type.");
+            System.out.println("Error: Invalid blood type. Please enter a valid blood type.");
         }
     }
     
@@ -270,7 +266,7 @@ public class InputValidator {
             } else if (input.equals("no") || input.equals("n")) {
                 return false;
             } else {
-                DisplayHelper.displayError("Please enter 'yes' or 'no'.");
+                System.out.println("Error: Please enter 'yes' or 'no'.");
             }
         }
     }
