@@ -6,6 +6,7 @@ import com.clinicapp.model.Doctor;
 import com.clinicapp.model.Patient;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,24 +63,26 @@ public class AppointmentManager {
      * 
      * @param patient Patient for the appointment
      * @param doctor Doctor for the appointment
-     * @param dateTime Date and time of appointment
+     * @param date Date of appointment
+     * @param startTime Start time of appointment
+     * @param endTime End time of appointment
      * @param reason Reason for visit
      * @return The newly created Appointment object, or null if validation fails
      */
     public Appointment scheduleAppointment(Patient patient, Doctor doctor, 
-                                          LocalDateTime dateTime, String reason) {
+                                          LocalDate date, LocalTime startTime, LocalTime endTime, String reason) {
         // Validate patient and doctor exist
         if (patient == null || doctor == null) {
             return null;
         }
         
         // Check for scheduling conflicts
-        if (hasConflict(doctor, dateTime)) {
+        if (hasConflict(doctor, date, startTime)) {
             return null;
         }
         
         // Create new appointment
-        Appointment appointment = new Appointment(patient, doctor, dateTime, reason);
+        Appointment appointment = new Appointment(patient, doctor, date, startTime, endTime, reason);
         appointments.put(appointment.getId(), appointment);
         
         // Add to queue for processing
@@ -93,26 +96,54 @@ public class AppointmentManager {
     }
     
     /**
-     * Check if doctor has a scheduling conflict at the given time.
-     * Considers appointments within 30 minutes as conflicts.
+     * Legacy method for backwards compatibility with LocalDateTime.
      */
-    private boolean hasConflict(Doctor doctor, LocalDateTime dateTime) {
+    public Appointment scheduleAppointment(Patient patient, Doctor doctor, 
+                                          LocalDateTime dateTime, String reason) {
+        if (dateTime == null) return null;
+        return scheduleAppointment(patient, doctor, dateTime.toLocalDate(), 
+                                  dateTime.toLocalTime(), 
+                                  dateTime.toLocalTime().plusHours(1), reason);
+    }
+    
+    /**
+     * Check if doctor has a scheduling conflict at the given time.
+     * Considers appointments on same date and overlapping times as conflicts.
+     */
+    private boolean hasConflict(Doctor doctor, LocalDate date, LocalTime startTime) {
         for (Appointment apt : appointments.values()) {
             // Only check scheduled or confirmed appointments
             if ((apt.getStatus() == AppointmentStatus.SCHEDULED || 
                  apt.getStatus() == AppointmentStatus.CONFIRMED) &&
                 apt.getDoctor().getId() == doctor.getId()) {
                 
-                LocalDateTime aptTime = apt.getAppointmentDateTime();
-                long minutesDiff = Math.abs(java.time.Duration.between(dateTime, aptTime).toMinutes());
-                
-                // If within 30 minutes, it's a conflict
-                if (minutesDiff < 30) {
-                    return true;
+                // Check if on same date
+                if (apt.getAppointmentDate().equals(date)) {
+                    // Check for time overlap
+                    LocalTime aptStart = apt.getStartTime();
+                    LocalTime aptEnd = apt.getEndTime();
+                    
+                    // Time overlaps if new appointment starts before existing ends
+                    // and new appointment ends after existing starts
+                    if (startTime.isBefore(aptEnd) && startTime.isAfter(aptStart)) {
+                        return true;
+                    }
+                    
+                    // Also check if exactly at the same time (within 1 minute)
+                    if (Math.abs(java.time.temporal.ChronoUnit.MINUTES.between(startTime, aptStart)) < 1) {
+                        return true;
+                    }
                 }
             }
         }
         return false;
+    }
+    
+    /**
+     * Legacy method for backwards compatibility.
+     */
+    private boolean hasConflict(Doctor doctor, LocalDateTime dateTime) {
+        return hasConflict(doctor, dateTime.toLocalDate(), dateTime.toLocalTime());
     }
     
     /**
@@ -161,15 +192,16 @@ public class AppointmentManager {
      */
     public List<Appointment> getAppointmentsByDate(LocalDate date) {
         return appointments.values().stream()
-                .filter(apt -> apt.getAppointmentDateTime().toLocalDate().equals(date))
-                .sorted(Comparator.comparing(Appointment::getAppointmentDateTime))
+                .filter(apt -> apt.getAppointmentDate().equals(date))
+                .sorted(Comparator.comparing(Appointment::getStartTime))
                 .collect(Collectors.toList());
     }
     
     /**
      * Update appointment details.
      */
-    public boolean updateAppointment(int id, LocalDateTime newDateTime, String newReason, String notes) {
+    public boolean updateAppointment(int id, LocalDate newDate, LocalTime newStartTime, 
+                                    LocalTime newEndTime, String newReason, String notes) {
         Appointment appointment = appointments.get(id);
         if (appointment == null) {
             return false;
@@ -179,13 +211,15 @@ public class AppointmentManager {
         Appointment previousState = cloneAppointment(appointment);
         
         // Update appointment
-        if (newDateTime != null) {
+        if (newDate != null && newStartTime != null) {
             // Check for conflicts with new time
-            if (hasConflict(appointment.getDoctor(), newDateTime)) {
+            if (hasConflict(appointment.getDoctor(), newDate, newStartTime)) {
                 return false;
             }
-            appointment.setAppointmentDateTime(newDateTime);
+            appointment.setAppointmentDate(newDate);
+            appointment.setStartTime(newStartTime);
         }
+        if (newEndTime != null) appointment.setEndTime(newEndTime);
         if (newReason != null) appointment.setReason(newReason);
         if (notes != null) appointment.setNotes(notes);
         
@@ -194,6 +228,17 @@ public class AppointmentManager {
                                             appointment, previousState));
         
         return true;
+    }
+    
+    /**
+     * Legacy method for backwards compatibility.
+     */
+    public boolean updateAppointment(int id, LocalDateTime newDateTime, String newReason, String notes) {
+        if (newDateTime == null) {
+            return updateAppointment(id, null, null, null, newReason, notes);
+        }
+        return updateAppointment(id, newDateTime.toLocalDate(), newDateTime.toLocalTime(),
+                                newDateTime.toLocalTime().plusHours(1), newReason, notes);
     }
     
     /**
@@ -377,10 +422,11 @@ public class AppointmentManager {
     public List<Appointment> getAppointmentHistory(LocalDate startDate, LocalDate endDate) {
         return appointments.values().stream()
                 .filter(apt -> {
-                    LocalDate aptDate = apt.getAppointmentDateTime().toLocalDate();
+                    LocalDate aptDate = apt.getAppointmentDate();
                     return !aptDate.isBefore(startDate) && !aptDate.isAfter(endDate);
                 })
-                .sorted(Comparator.comparing(Appointment::getAppointmentDateTime))
+                .sorted(Comparator.comparing(Appointment::getAppointmentDate)
+                        .thenComparing(Appointment::getStartTime))
                 .collect(Collectors.toList());
     }
     
@@ -412,7 +458,8 @@ public class AppointmentManager {
      */
     private Appointment cloneAppointment(Appointment apt) {
         Appointment clone = new Appointment(apt.getPatient(), apt.getDoctor(),
-                                           apt.getAppointmentDateTime(), apt.getReason());
+                                           apt.getAppointmentDate(), apt.getStartTime(),
+                                           apt.getEndTime(), apt.getReason());
         clone.setStatus(apt.getStatus());
         clone.setNotes(apt.getNotes());
         return clone;
@@ -422,7 +469,9 @@ public class AppointmentManager {
      * Restore appointment to previous state.
      */
     private void restoreAppointmentState(Appointment current, Appointment previous) {
-        current.setAppointmentDateTime(previous.getAppointmentDateTime());
+        current.setAppointmentDate(previous.getAppointmentDate());
+        current.setStartTime(previous.getStartTime());
+        current.setEndTime(previous.getEndTime());
         current.setReason(previous.getReason());
         current.setStatus(previous.getStatus());
         current.setNotes(previous.getNotes());
