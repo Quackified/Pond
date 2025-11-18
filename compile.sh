@@ -10,12 +10,16 @@ echo "======================================="
 # Create bin directory if it doesn't exist
 mkdir -p bin
 
+# Set classpath for libraries
+CLASSPATH="lib/*"
+
 # Compile all Java files
-javac -d bin \
+javac -cp "$CLASSPATH" -d bin \
     src/main/java/com/clinicapp/model/*.java \
     src/main/java/com/clinicapp/service/*.java \
     src/main/java/com/clinicapp/util/*.java \
-    src/main/java/com/clinicapp/ui/*.java \
+    src/main/java/com/clinicapp/io/*.java \
+    src/main/java/com/clinicapp/gui/*.java \
     src/main/java/com/clinicapp/*.java
 
 # Check compilation result
@@ -27,7 +31,7 @@ if [ $? -eq 0 ]; then
     find bin -name "*.class" | wc -l
     echo ""
     echo "To run the application, use:"
-    echo "  java -cp bin com.clinicapp.ClinicAppointmentSystem"
+    echo "  java -cp bin:lib/* com.clinicapp.ClinicManagementGUI"
     echo "or:"
     echo "  ./run.sh"
 else

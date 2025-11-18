@@ -8,10 +8,11 @@ cd "$(dirname "$0")"
 if [ ! -d "bin" ]; then
     echo "Bin directory not found. Compiling..."
     mkdir -p bin
-    javac -d bin src/main/java/com/clinicapp/model/*.java \
+    javac -cp "lib/*" -d bin src/main/java/com/clinicapp/model/*.java \
                  src/main/java/com/clinicapp/service/*.java \
                  src/main/java/com/clinicapp/util/*.java \
-                 src/main/java/com/clinicapp/ui/*.java \
+                 src/main/java/com/clinicapp/io/*.java \
+                 src/main/java/com/clinicapp/gui/*.java \
                  src/main/java/com/clinicapp/*.java
     
     if [ $? -ne 0 ]; then
@@ -23,4 +24,4 @@ fi
 
 # Run the application
 echo "Starting Clinic Appointment System..."
-java -cp bin com.clinicapp.ClinicAppointmentSystem
+java -cp "bin:lib/*" com.clinicapp.ClinicManagementGUI
