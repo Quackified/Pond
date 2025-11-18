@@ -1,6 +1,7 @@
 package com.clinicapp.service;
 
 import com.clinicapp.model.Doctor;
+import java.time.LocalTime;
 import java.util.*;
 
 /**
@@ -32,8 +33,8 @@ public class DoctorManager {
      * @return The newly created Doctor object
      */
     public Doctor addDoctor(String name, String specialization, String phoneNumber,
-                           String email, List<String> availableDays, String startTime,
-                           String endTime) {
+                           String email, List<String> availableDays, LocalTime startTime,
+                           LocalTime endTime) {
         Doctor doctor = new Doctor(name, specialization, phoneNumber, email,
                                   availableDays, startTime, endTime);
         doctors.put(doctor.getId(), doctor);
@@ -127,7 +128,7 @@ public class DoctorManager {
      */
     public boolean updateDoctor(int id, String name, String specialization,
                                String phoneNumber, String email, List<String> availableDays,
-                               String startTime, String endTime) {
+                               LocalTime startTime, LocalTime endTime) {
         Doctor doctor = doctors.get(id);
         if (doctor == null) {
             return false;

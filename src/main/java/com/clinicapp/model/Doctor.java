@@ -1,5 +1,6 @@
 package com.clinicapp.model;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,16 +17,16 @@ public class Doctor {
     private String phoneNumber;
     private String email;
     private List<String> availableDays; // Days of the week (e.g., "Monday", "Tuesday")
-    private String startTime; // e.g., "09:00"
-    private String endTime;   // e.g., "17:00"
+    private LocalTime startTime;
+    private LocalTime endTime;
     private boolean isAvailable;
     
     /**
      * Constructor for creating a new doctor with auto-generated ID.
      */
     public Doctor(String name, String specialization, String phoneNumber, 
-                  String email, List<String> availableDays, String startTime, 
-                  String endTime) {
+                  String email, List<String> availableDays, LocalTime startTime, 
+                  LocalTime endTime) {
         this.id = nextId++;
         this.name = name;
         this.specialization = specialization;
@@ -82,19 +83,19 @@ public class Doctor {
         this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>();
     }
     
-    public String getStartTime() {
+    public LocalTime getStartTime() {
         return startTime;
     }
     
-    public void setStartTime(String startTime) {
+    public void setStartTime(LocalTime startTime) {
         this.startTime = startTime;
     }
     
-    public String getEndTime() {
+    public LocalTime getEndTime() {
         return endTime;
     }
     
-    public void setEndTime(String endTime) {
+    public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
     }
     
@@ -130,7 +131,9 @@ public class Doctor {
         sb.append(String.format("║ Phone Number   : %-45s ║\n", phoneNumber));
         sb.append(String.format("║ Email          : %-45s ║\n", email != null ? email : "N/A"));
         sb.append(String.format("║ Status         : %-45s ║\n", isAvailable ? "Available" : "Unavailable"));
-        sb.append(String.format("║ Working Hours  : %s - %-36s ║\n", startTime, endTime));
+        sb.append(String.format("║ Working Hours  : %s - %-36s ║\n", 
+            startTime != null ? startTime.toString() : "N/A", 
+            endTime != null ? endTime.toString() : "N/A"));
         sb.append(String.format("║ Available Days : %-45s ║\n", String.join(", ", availableDays)));
         sb.append("╚════════════════════════════════════════════════════════════════╝\n");
         return sb.toString();
