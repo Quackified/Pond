@@ -52,3 +52,7 @@ Desktop.ini
 *.bak
 *.swp
 *~
+
+# Application data and exports
+/data/
+/exports/

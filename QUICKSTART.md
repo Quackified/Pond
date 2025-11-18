@@ -1,164 +1,99 @@
 # Quick Start Guide
 
-## Get Up and Running in 3 Steps
+## Getting Started in 3 Steps
 
-### Step 1: Compile
+### 1. Compile the Application
+
 ```bash
 ./compile.sh
 ```
 
-Or manually:
-```bash
-mkdir -p bin
-javac -d bin src/main/java/com/clinicapp/model/*.java \
-              src/main/java/com/clinicapp/service/*.java \
-              src/main/java/com/clinicapp/util/*.java \
-              src/main/java/com/clinicapp/ui/*.java \
-              src/main/java/com/clinicapp/*.java
-```
+### 2. Run the Application
 
-### Step 2: Run
 ```bash
 ./run.sh
 ```
 
-Or manually:
-```bash
-java -cp bin com.clinicapp.ClinicAppointmentSystem
-```
+### 3. Start Using
 
-### Step 3: Explore!
-The application comes with sample data:
-- 3 Patients (John Smith, Jane Doe, Bob Johnson)
-- 3 Doctors (Dr. Williams, Dr. Chen, Dr. Brown)
-- 2 Pre-scheduled Appointments
+The application window will open with three tabs:
+- **Patients**: Manage patient records
+- **Doctors**: Manage doctor information
+- **Appointments**: Schedule and manage appointments
 
-## First Steps in the Application
+## First Time Setup
 
-### Try These Actions:
+1. **Add a Doctor First**
+   - Go to the Doctors tab
+   - Click "Add Doctor"
+   - Fill in the doctor's information
+   - Select available days
+   - Click OK
 
-1. **View Sample Data**
-   - Press `2` - View All Patients
-   - Press `8` - View All Doctors
-   - Press `16` - View All Appointments
+2. **Add a Patient**
+   - Go to the Patients tab
+   - Click "Add Patient"
+   - Fill in patient information
+   - Click OK
 
-2. **Schedule a New Appointment**
-   - Press `15` - Schedule New Appointment
-   - Enter Patient ID: `1` (John Smith)
-   - Enter Doctor ID: `1` (Dr. Williams)
-   - Enter Date: Tomorrow's date (format: yyyy-MM-dd)
-   - Enter Time: `14:00`
-   - Enter Reason: `Annual checkup`
+3. **Schedule an Appointment**
+   - Go to the Appointments tab
+   - Click "Add Appointment"
+   - Select a patient and doctor
+   - Choose date and time
+   - Enter the reason for visit
+   - Click OK
 
-3. **View Reports**
-   - Press `28` - View Daily Report
-   - Enter today's date or tomorrow's date
-   - See statistics and schedule
+## Saving Your Data
 
-4. **Process Queue**
-   - Press `26` - View Appointment Queue
-   - Press `27` - Process Next Appointment
-   - Press `24` - Complete Appointment
+Data is automatically saved when you close the application. You can also:
+- Use File → Save to manually save
+- Use File → Load to reload data
 
-5. **Exit**
-   - Press `0` - Exit System
+## Exporting Data
 
-## Menu Categories
+To export data to CSV:
+1. Click Export menu
+2. Choose what to export (Patients, Doctors, or Appointments)
+3. Enter a filename
+4. Files are saved in the `exports/` folder
 
-### Patient Management (1-6)
-Quick actions: View patients (2), Search (3), Register new (1)
+## Keyboard Shortcuts
 
-### Doctor Management (7-14)
-Quick actions: View doctors (8), Search by specialty (10), Add new (7)
-
-### Appointment Management (15-25)
-Quick actions: Schedule (15), View all (16), View by date (19)
-
-### Queue & Reporting (26-28)
-Quick actions: View queue (26), Process next (27), Daily report (28)
-
-## Input Formats
-
-- **Dates**: `2025-10-26` (yyyy-MM-dd)
-- **Times**: `14:30` (HH:mm)
-- **Phone**: `5551234567` (10-15 digits)
-- **Email**: `name@example.com`
-- **Gender**: Male, Female, or Other
-- **Blood Type**: A+, A-, B+, B-, AB+, AB-, O+, O-
+- Click rows in tables to select items
+- Double-click to view details (in some dialogs)
 
 ## Tips
 
-1. **Navigation**: Just enter the number of the menu option
-2. **Optional Fields**: Press ENTER to skip optional fields
-3. **Confirmations**: Type `yes` or `no` when prompted
-4. **Errors**: If you make a mistake, the system will guide you
-5. **Undo**: Appointment actions can be undone (tracked in status)
+- **Valid Date Format**: yyyy-MM-dd (e.g., 2024-12-25)
+- **Valid Time Format**: HH:mm (e.g., 14:30)
+- **Phone Numbers**: 10-15 digits (can start with +)
+- **Email**: Standard email format required
+- **Blood Types**: A+, A-, B+, B-, AB+, AB-, O+, O-
 
-## Common Workflows
+## Troubleshooting
 
-### Register Patient → Schedule Appointment
-```
-1 → [patient details] → 15 → [use new patient ID] → [schedule details]
-```
+**Application won't start?**
+- Make sure Java 8 or higher is installed
+- Run `./compile.sh` first
 
-### View Patient History
-```
-4 → [patient ID] → See patient details + appointment history
-```
+**Data not saving?**
+- Check that the application has write permissions
+- Look for a `data/` directory in the project folder
 
-### Daily Operations
-```
-26 → View queue → 27 → Process each → 24 → Complete with notes
-```
+**Can't schedule appointment?**
+- Make sure both patient and doctor exist
+- Check for time conflicts (doctors can't have appointments within 30 minutes of each other)
 
-### Generate Report
-```
-28 → [date] → View statistics and schedule
-```
+## File Locations
+
+- **Application Data**: `data/` directory
+  - `patients.json`
+  - `doctors.json`
+  - `appointments.json`
+
+- **CSV Exports**: `exports/` directory
 
 ## Need Help?
 
-- See `README.md` for complete documentation
-- See `TESTING.md` for detailed test scenarios
-- All menu options include helpful prompts
-- Error messages guide you to correct input
-
-## Example Session
-
-```
-Starting Clinic Appointment System...
-
-╔═══════════════════════════════════════════════════════════════╗
-║         CLINIC APPOINTMENT MANAGEMENT SYSTEM                  ║
-╚═══════════════════════════════════════════════════════════════╝
-
-Press ENTER to continue...
-
-[MAIN MENU displays with 28 options]
-
-Enter your choice: 2
-
-[Patient table displays with 3 patients]
-
-Press ENTER to continue...
-
-[Back to main menu]
-
-Enter your choice: 15
-
-[Schedule new appointment workflow]
-
-✓ SUCCESS: Appointment scheduled successfully!
-
-[Appointment details display]
-
-Press ENTER to continue...
-
-Enter your choice: 0
-
-Are you sure you want to exit? (yes/no): yes
-
-✓ Thank you for using the Clinic Appointment System. Goodbye!
-```
-
-Happy Managing! 🏥
+Check the full README.md for detailed information about all features.
