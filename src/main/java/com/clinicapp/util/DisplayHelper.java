@@ -4,7 +4,6 @@ import com.clinicapp.model.Appointment;
 import com.clinicapp.model.Doctor;
 import com.clinicapp.model.Patient;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -15,8 +14,6 @@ import java.util.Map;
 public class DisplayHelper {
     
     private static final int TABLE_WIDTH = 100;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     
     /**
      * Print a styled header banner.
@@ -69,7 +66,7 @@ public class DisplayHelper {
             System.out.printf("│ %-4d │ %-25s │ %-12s │ %-5d │ %-10s │ %-15s │%n",
                             patient.getId(),
                             truncate(patient.getName(), 25),
-                            patient.getDateOfBirth().format(DATE_FORMATTER),
+                            DateUtils.formatDateCompact(patient.getDateOfBirth()),
                             patient.getAge(),
                             truncate(patient.getGender(), 10),
                             truncate(patient.getPhoneNumber(), 15));
@@ -128,7 +125,7 @@ public class DisplayHelper {
         for (Appointment apt : appointments) {
             System.out.printf("│ %-4d │ %-16s │ %-20s │ Dr. %-17s │ %-20s │%n",
                             apt.getId(),
-                            apt.getAppointmentDateTime().format(DATETIME_FORMATTER),
+                            DateUtils.formatDateTimeCompact(apt.getAppointmentDateTime()),
                             truncate(apt.getPatient().getName(), 20),
                             truncate(apt.getDoctor().getName(), 17),
                             apt.getStatus());
@@ -142,7 +139,7 @@ public class DisplayHelper {
      * Display daily schedule view for a specific date.
      */
     public static void displayDailySchedule(LocalDate date, List<Appointment> appointments) {
-        printHeader("DAILY SCHEDULE - " + date.format(DATE_FORMATTER));
+        printHeader("DAILY SCHEDULE - " + DateUtils.formatDateCompact(date));
         
         if (appointments.isEmpty()) {
             System.out.println("\n❌ No appointments scheduled for this date.");
@@ -155,7 +152,7 @@ public class DisplayHelper {
         System.out.println("├" + "─".repeat(TABLE_WIDTH - 2) + "┤");
         
         for (Appointment apt : appointments) {
-            String time = apt.getAppointmentDateTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String time = DateUtils.formatTimeCompact(apt.getStartTime());
             System.out.printf("│ %-8s │ %-20s │ Dr. %-17s │ %-30s │ %-12s │%n",
                             time,
                             truncate(apt.getPatient().getName(), 20),
@@ -171,7 +168,7 @@ public class DisplayHelper {
      * Display daily statistics report.
      */
     public static void displayDailyReport(LocalDate date, Map<String, Integer> statistics) {
-        printHeader("DAILY REPORT - " + date.format(DATE_FORMATTER));
+        printHeader("DAILY REPORT - " + DateUtils.formatDateCompact(date));
         
         System.out.println("\n┌" + "─".repeat(60) + "┐");
         System.out.println("│" + centerText("APPOINTMENT STATISTICS", 60) + "│");
@@ -208,7 +205,7 @@ public class DisplayHelper {
         for (Appointment apt : queue) {
             System.out.printf("│ %-8d │ %-16s │ %-20s │ Dr. %-17s │ %-20s │%n",
                             position++,
-                            apt.getAppointmentDateTime().format(DATETIME_FORMATTER),
+                            DateUtils.formatDateTimeCompact(apt.getAppointmentDateTime()),
                             truncate(apt.getPatient().getName(), 20),
                             truncate(apt.getDoctor().getName(), 17),
                             truncate(apt.getReason(), 20));

@@ -3,24 +3,21 @@ package com.clinicapp.io;
 import com.clinicapp.model.Appointment;
 import com.clinicapp.model.Doctor;
 import com.clinicapp.model.Patient;
+import com.clinicapp.util.DateUtils;
 import com.opencsv.CSVWriter;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CsvExporter {
     private static final String EXPORT_DIRECTORY = "exports/";
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
     
     public static String exportPatients(List<Patient> patients) throws IOException {
         String fileName = EXPORT_DIRECTORY + "patients_" + 
-                         LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + 
+                         DateUtils.formatDateCompact(LocalDate.now()).replace("-", "") + 
                          "_" + System.currentTimeMillis() + ".csv";
         
         try (CSVWriter writer = new CSVWriter(new FileWriter(fileName))) {
@@ -34,7 +31,7 @@ public class CsvExporter {
                 String[] data = {
                     String.valueOf(patient.getId()),
                     patient.getName(),
-                    patient.getDateOfBirth().format(DATE_FORMATTER),
+                    DateUtils.formatDateCompact(patient.getDateOfBirth()),
                     String.valueOf(patient.getAge()),
                     patient.getGender(),
                     patient.getPhoneNumber(),
@@ -52,7 +49,7 @@ public class CsvExporter {
     
     public static String exportDoctors(List<Doctor> doctors) throws IOException {
         String fileName = EXPORT_DIRECTORY + "doctors_" + 
-                         LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + 
+                         DateUtils.formatDateCompact(LocalDate.now()).replace("-", "") + 
                          "_" + System.currentTimeMillis() + ".csv";
         
         try (CSVWriter writer = new CSVWriter(new FileWriter(fileName))) {
@@ -85,7 +82,7 @@ public class CsvExporter {
     
     public static String exportAppointments(List<Appointment> appointments) throws IOException {
         String fileName = EXPORT_DIRECTORY + "appointments_" + 
-                         LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + 
+                         DateUtils.formatDateCompact(LocalDate.now()).replace("-", "") + 
                          "_" + System.currentTimeMillis() + ".csv";
         
         try (CSVWriter writer = new CSVWriter(new FileWriter(fileName))) {
@@ -98,9 +95,9 @@ public class CsvExporter {
             for (Appointment appointment : appointments) {
                 String[] data = {
                     String.valueOf(appointment.getId()),
-                    appointment.getAppointmentDate().format(DATE_FORMATTER),
-                    appointment.getStartTime().format(TIME_FORMATTER),
-                    appointment.getEndTime().format(TIME_FORMATTER),
+                    DateUtils.formatDateCompact(appointment.getAppointmentDate()),
+                    DateUtils.formatTimeCompact(appointment.getStartTime()),
+                    DateUtils.formatTimeCompact(appointment.getEndTime()),
                     String.valueOf(appointment.getPatient().getId()),
                     appointment.getPatient().getName(),
                     String.valueOf(appointment.getDoctor().getId()),
@@ -108,7 +105,7 @@ public class CsvExporter {
                     appointment.getReason(),
                     appointment.getStatus().toString(),
                     appointment.getNotes() != null ? appointment.getNotes() : "",
-                    appointment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    DateUtils.formatDateTimeSQL(appointment.getCreatedAt())
                 };
                 writer.writeNext(data);
             }
@@ -119,7 +116,7 @@ public class CsvExporter {
     
     public static String exportAppointmentsByDate(List<Appointment> appointments, LocalDate date) throws IOException {
         String fileName = EXPORT_DIRECTORY + "appointments_" + 
-                         date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + 
+                         DateUtils.formatDateCompact(date).replace("-", "") + 
                          "_" + System.currentTimeMillis() + ".csv";
         
         List<Appointment> filteredAppointments = new ArrayList<>();
@@ -139,9 +136,9 @@ public class CsvExporter {
             for (Appointment appointment : filteredAppointments) {
                 String[] data = {
                     String.valueOf(appointment.getId()),
-                    appointment.getAppointmentDate().format(DATE_FORMATTER),
-                    appointment.getStartTime().format(TIME_FORMATTER),
-                    appointment.getEndTime().format(TIME_FORMATTER),
+                    DateUtils.formatDateCompact(appointment.getAppointmentDate()),
+                    DateUtils.formatTimeCompact(appointment.getStartTime()),
+                    DateUtils.formatTimeCompact(appointment.getEndTime()),
                     String.valueOf(appointment.getPatient().getId()),
                     appointment.getPatient().getName(),
                     String.valueOf(appointment.getDoctor().getId()),

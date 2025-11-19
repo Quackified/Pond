@@ -9,6 +9,7 @@ import com.clinicapp.model.Patient;
 import com.clinicapp.service.AppointmentManager;
 import com.clinicapp.service.DoctorManager;
 import com.clinicapp.service.PatientManager;
+import com.clinicapp.util.DateUtils;
 import com.clinicapp.util.InputValidator;
 
 import javax.swing.*;
@@ -18,7 +19,6 @@ import java.awt.*;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class AppointmentPanel extends JPanel {
@@ -92,14 +92,13 @@ public class AppointmentPanel extends JPanel {
     private void refreshTable() {
         tableModel.setRowCount(0);
         List<Appointment> appointments = appointmentManager.getAllAppointments();
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         
         for (Appointment apt : appointments) {
             Object[] row = {
                 apt.getId(),
                 apt.getAppointmentDate(),
-                apt.getStartTime().format(timeFormatter),
-                apt.getEndTime().format(timeFormatter),
+                DateUtils.formatTimeCompact(apt.getStartTime()),
+                DateUtils.formatTimeCompact(apt.getEndTime()),
                 apt.getPatient().getName(),
                 "Dr. " + apt.getDoctor().getName(),
                 apt.getReason(),
@@ -235,13 +234,12 @@ public class AppointmentPanel extends JPanel {
         Appointment appointment = appointmentManager.getAppointmentById(appointmentId);
         
         if (appointment != null) {
-            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
             String details = String.format(
                 "ID: %d\nDate: %s\nTime: %s - %s\nPatient: %s (ID: %d)\nDoctor: Dr. %s (ID: %d)\nSpecialization: %s\nReason: %s\nStatus: %s\nNotes: %s",
                 appointment.getId(),
                 appointment.getAppointmentDate(),
-                appointment.getStartTime().format(timeFormatter),
-                appointment.getEndTime().format(timeFormatter),
+                DateUtils.formatTimeCompact(appointment.getStartTime()),
+                DateUtils.formatTimeCompact(appointment.getEndTime()),
                 appointment.getPatient().getName(),
                 appointment.getPatient().getId(),
                 appointment.getDoctor().getName(),
@@ -272,11 +270,9 @@ public class AppointmentPanel extends JPanel {
         dialog.setSize(500, 300);
         dialog.setLocationRelativeTo(this);
         
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        
         JTextField dateField = new JTextField(appointment.getAppointmentDate().toString());
-        JTextField startTimeField = new JTextField(appointment.getStartTime().format(timeFormatter));
-        JTextField endTimeField = new JTextField(appointment.getEndTime().format(timeFormatter));
+        JTextField startTimeField = new JTextField(DateUtils.formatTimeCompact(appointment.getStartTime()));
+        JTextField endTimeField = new JTextField(DateUtils.formatTimeCompact(appointment.getEndTime()));
         JTextField reasonField = new JTextField(appointment.getReason());
         JTextArea notesArea = new JTextArea(appointment.getNotes() != null ? appointment.getNotes() : "");
         notesArea.setLineWrap(true);

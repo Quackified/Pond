@@ -1,7 +1,8 @@
 package com.clinicapp.model;
 
+import com.clinicapp.util.DateUtils;
+
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Patient model representing a patient in the clinic system.
@@ -118,23 +119,21 @@ public class Patient {
      */
     @Override
     public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return String.format("ID: %d | Name: %s | DOB: %s | Age: %d | Gender: %s | Phone: %s",
-                           id, name, dateOfBirth.format(formatter), getAge(), gender, phoneNumber);
+                           id, name, DateUtils.formatDateCompact(dateOfBirth), getAge(), gender, phoneNumber);
     }
     
     /**
      * Get detailed patient information for display.
      */
     public String getDetailedInfo() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         StringBuilder sb = new StringBuilder();
         sb.append("\n╔════════════════════════════════════════════════════════════════╗\n");
         sb.append("║                      PATIENT DETAILS                           ║\n");
         sb.append("╠════════════════════════════════════════════════════════════════╣\n");
         sb.append(String.format("║ Patient ID    : %-45d ║\n", id));
         sb.append(String.format("║ Name          : %-45s ║\n", name));
-        sb.append(String.format("║ Date of Birth : %-45s ║\n", dateOfBirth.format(formatter)));
+        sb.append(String.format("║ Date of Birth : %-45s ║\n", DateUtils.formatDateCompact(dateOfBirth)));
         sb.append(String.format("║ Age           : %-45d ║\n", getAge()));
         sb.append(String.format("║ Gender        : %-45s ║\n", gender));
         sb.append(String.format("║ Phone Number  : %-45s ║\n", phoneNumber));
