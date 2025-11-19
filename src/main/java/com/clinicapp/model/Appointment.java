@@ -1,9 +1,10 @@
 package com.clinicapp.model;
 
+import com.clinicapp.util.DateUtils;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Appointment model representing a scheduled appointment in the clinic system.
@@ -134,11 +135,9 @@ public class Appointment {
      */
     @Override
     public String toString() {
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         return String.format("ID: %d | %s %s-%s | Patient: %s | Dr. %s | %s | Status: %s",
-                           id, appointmentDate.format(dateFormatter), 
-                           startTime.format(timeFormatter), endTime.format(timeFormatter),
+                           id, DateUtils.formatDateCompact(appointmentDate), 
+                           DateUtils.formatTimeCompact(startTime), DateUtils.formatTimeCompact(endTime),
                            patient.getName(), doctor.getName(), reason, status);
     }
     
@@ -146,17 +145,14 @@ public class Appointment {
      * Get detailed appointment information for display.
      */
     public String getDetailedInfo() {
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         StringBuilder sb = new StringBuilder();
         sb.append("\n╔════════════════════════════════════════════════════════════════╗\n");
         sb.append("║                    APPOINTMENT DETAILS                         ║\n");
         sb.append("╠════════════════════════════════════════════════════════════════╣\n");
         sb.append(String.format("║ Appointment ID : %-45d ║\n", id));
-        sb.append(String.format("║ Date           : %-45s ║\n", appointmentDate.format(dateFormatter)));
+        sb.append(String.format("║ Date           : %-45s ║\n", DateUtils.formatDateCompact(appointmentDate)));
         sb.append(String.format("║ Time           : %-45s ║\n", 
-            startTime.format(timeFormatter) + " - " + endTime.format(timeFormatter)));
+            DateUtils.formatTimeCompact(startTime) + " - " + DateUtils.formatTimeCompact(endTime)));
         sb.append(String.format("║ Patient        : %-45s ║\n", patient.getName()));
         sb.append(String.format("║ Patient ID     : %-45d ║\n", patient.getId()));
         sb.append(String.format("║ Doctor         : Dr. %-41s ║\n", doctor.getName()));
@@ -167,7 +163,7 @@ public class Appointment {
         if (notes != null && !notes.isEmpty()) {
             sb.append(String.format("║ Notes          : %-45s ║\n", notes));
         }
-        sb.append(String.format("║ Created At     : %-45s ║\n", createdAt.format(dateTimeFormatter)));
+        sb.append(String.format("║ Created At     : %-45s ║\n", DateUtils.formatDateTimeCompact(createdAt)));
         sb.append("╚════════════════════════════════════════════════════════════════╝\n");
         return sb.toString();
     }
